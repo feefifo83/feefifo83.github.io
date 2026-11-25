@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>앵커사업 사업비 집행지침 도우미</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 레이아웃: 상단 검색+탭, 본문은 질문 스레드 / 항목 목록 / 계산기 3개 뷰 */
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#15212e; --muted:#5b6876; --line:#dde3e9;
+  --accent:#0d5c7a; --accent-soft:#e3eff4; --gold:#a8741a; --gold-soft:#fbf2e1;
+  --warn:#a23b2a; --warn-soft:#fbeae6; --ok:#2c6e49;
+  --display:"IBM Plex Sans KR","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --surface:#18212a; --ink:#e6edf3; --muted:#9aa8b5; --line:#2a3642;
+  --accent:#5fb3d3; --accent-soft:#1b3442; --gold:#e0b25c; --gold-soft:#33291a;
+  --warn:#ef8a76; --warn-soft:#3a201b; --ok:#7cc79b; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --surface:#18212a; --ink:#e6edf3; --muted:#9aa8b5; --line:#2a3642;
+  --accent:#5fb3d3; --accent-soft:#1b3442; --gold:#e0b25c; --gold-soft:#33291a;
+  --warn:#ef8a76; --warn-soft:#3a201b; --ok:#7cc79b; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 48px}
+header{padding:22px 0 10px;display:grid;gap:4px}
+.badge{font-size:12px;color:var(--gold);background:var(--gold-soft);padding:2px 8px;border-radius:4px;justify-self:start;font-weight:500}
+h1{font-family:var(--display);font-size:22px;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:12px 0 16px;position:sticky;top:0;background:var(--bg);z-index:5}
+nav button{font:inherit;font-weight:500;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;color:var(--muted);cursor:pointer}
+nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.view[hidden]{display:none}
+/* 질문 */
+.ask{display:flex;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 14px;align-items:center}
+.ask input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--ink);padding:8px 0}
+.ask input:focus{outline:none}
+.ask:focus-within{border-color:var(--accent)}
+.btn{font:inherit;font-weight:500;border:0;border-radius:8px;padding:9px 16px;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap}
+:root[data-theme="dark"] .btn{color:#0b1a22}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0b1a22}}
+.btn.ghost{background:var(--accent-soft);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.thread{display:grid;gap:14px;margin-top:18px}
+.q{justify-self:end;max-width:85%;background:var(--accent);color:#fff;padding:8px 14px;border-radius:14px 14px 4px 14px}
+:root[data-theme="dark"] .q{color:#0b1a22}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .q{color:#0b1a22}}
+.a{background:var(--surface);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:14px 16px;display:grid;gap:12px;max-width:100%;overflow:hidden}
+.lbl{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.ai{border-left:3px solid var(--gold);padding-left:12px}
+.ai .txt{white-space:normal}
+.ai .txt p{margin:.3em 0}.ai .txt ul{margin:.3em 0;padding-left:1.2em}
+.ai .err{color:var(--muted);font-size:13px}
+.card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.card h3{font-family:var(--display);font-size:16px;margin:0;text-wrap:balance}
+.card .hd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;padding:12px 14px 0}
+.pg{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cat{font-size:11.5px;color:var(--accent);font-weight:500}
+.card .bd{padding:6px 14px 14px;font-size:14.5px}
+.card ul{margin:.3em 0;padding-left:1.2em}.card li{margin:.15em 0}
+.card p{margin:.4em 0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:.4em 0;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:500}
+.note{color:var(--muted);font-size:13px}
+.warn{background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:7px 10px;font-size:13.5px}
+.docs{background:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;margin-top:8px}
+.docs b{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+.docs ul{margin:0;padding-left:1.1em}
+.more{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.more span{font-size:12.5px;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px}
+/* 목록 */
+.filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.list{display:grid;gap:10px}
+details.card summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary h3::before{content:"▸ ";color:var(--muted)}
+details.card[open] summary h3::before{content:"▾ "}
+/* 계산기 */
+.calcs{display:grid;gap:16px}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.calc h2{font-family:var(--display);font-size:17px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+label.f{display:grid;gap:3px;font-size:13px;color:var(--muted)}
+label.f input,label.f select{font:inherit;font-size:14.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;width:100%}
+label.c{display:flex;gap:6px;align-items:center;font-size:14px}
+.res{background:var(--accent-soft);border-radius:9px;padding:12px 14px;display:grid;gap:4px;font-variant-numeric:tabular-nums}
+.res .big{font-family:var(--display);font-size:24px;font-weight:700;color:var(--accent)}
+.res .row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.flag{font-size:13px;padding:4px 9px;border-radius:5px;display:inline-block}
+.flag.ok{background:var(--accent-soft);color:var(--ok)}.flag.no{background:var(--warn-soft);color:var(--warn)}
+.flags{display:flex;flex-wrap:wrap;gap:6px}
+.moe{background:var(--gold-soft);border-left:3px solid var(--gold);border-radius:6px;padding:7px 10px;font-size:13px;margin-top:8px}
+.moe b{color:var(--gold);display:block;font-size:12px}
+.faqlbl{color:var(--gold)}
+.sub-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.res .sec{font-size:12px;color:var(--muted);margin-top:4px;font-weight:700}
+[hidden]{display:none!important}
+/* 최근 변경사항 */
+.chg{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;margin:4px 0 0}
+.chg summary{list-style:none;cursor:pointer;padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+.chg summary::-webkit-details-marker{display:none}
+.chg summary::before{content:"▸";color:var(--muted)}
+.chg[open] summary::before{content:"▾"}
+.chg summary b{font-family:var(--display);font-size:14px}
+.chg .latest{color:var(--muted);flex:1;min-width:0}
+.chg .new{font-size:11px;font-weight:700;color:var(--gold);background:var(--gold-soft);border-radius:4px;padding:1px 6px}
+.chg ol{list-style:none;margin:0;padding:0 12px 10px;display:grid;gap:8px}
+.chg li{display:grid;grid-template-columns:86px 1fr;gap:10px;font-size:13.5px;border-top:1px solid var(--line);padding-top:8px}
+.chg time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px;padding-top:1px}
+.chg .tag{font-size:11.5px;color:var(--accent);font-weight:500;margin-right:4px}
+.chg ul{margin:.2em 0 0;padding-left:1.1em}
+@media (max-width:420px){.chg li{grid-template-columns:1fr;gap:2px}}
+footer{margin-top:28px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:420px){h1{font-size:19px}.btn{padding:9px 12px}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="badge">울산대 집행지침 2026.10 개정(안) · 교육부 지침·FAQ · 여비지침 2026.4.1</span>
+  <h1>앵커사업 사업비 집행지침 도우미</h1>
+  <p class="sub">울산대학교 앵커사업단 · 상황을 적으면 해당 기준, 한도, 증빙서류를 찾아 드립니다. 교육부 지침과 다른 부분은 노란 표시로 알려 드려요.</p>
+</header>
+<details class="chg" id="changes"><summary></summary><ol></ol></details>
+<nav role="tablist">
+  <button role="tab" id="t-ask" aria-selected="true" data-v="ask">질문하기</button>
+  <button role="tab" id="t-list" aria-selected="false" data-v="list">항목별 보기</button>
+  <button role="tab" id="t-faq" aria-selected="false" data-v="faq">교육부 FAQ</button>
+  <button role="tab" id="t-calc" aria-selected="false" data-v="calc">계산기</button>
+</nav>
+
+<section class="view" id="v-ask">
+  <form class="ask" id="askForm">
+    <input id="q" autocomplete="off" placeholder="예) 외부 교수 특강 2시간 40분, 서울에서 오면 얼마?">
+    <button class="btn" type="submit">찾기</button>
+  </form>
+  <div class="chips" id="examples"></div>
+  <div class="thread" id="thread"></div>
+</section>
+
+<section class="view" id="v-list" hidden>
+  <div class="filter" id="filter"></div>
+  <div class="list" id="list"></div>
+</section>
+
+<section class="view" id="v-faq" hidden>
+  <p class="sub" style="margin-bottom:10px">「앵커 사업비 집행 및 관리 관련 FAQ」(교육부, 2026.6.) 중 대학 실무에 필요한 문항을 요약했습니다.</p>
+  <div class="filter" id="ffilter"></div>
+  <div class="list" id="flist"></div>
+</section>
+
+<section class="view" id="v-calc" hidden>
+  <div class="calcs">
+    <div class="calc" id="c-trip">
+      <h2>여비 계산기</h2>
+      <div class="sub-tabs" id="tripTabs">
+        <button class="chip" type="button" aria-pressed="true" data-t="dom">국내 출장</button>
+        <button class="chip" type="button" aria-pressed="false" data-t="loc">관내 출장</button>
+        <button class="chip" type="button" aria-pressed="false" data-t="intl">국외 출장</button>
+        <button class="chip" type="button" aria-pressed="false" data-t="stu">학생 여비</button>
+      </div>
+      <div id="trip-dom">
+        <div class="grid">
+          <label class="f">출장자 구분<select id="dg"><option value="3">제3호 · 조교수 이하, 일반 직원, 연구원, 학생연구자</option><option value="2">제2호 · 부교수 이상, 팀·실장 이상, 부총장</option><option value="1">제1호 · 총장</option></select></label>
+          <label class="f">출발 일시<input id="ds" type="datetime-local" value="2026-11-12T07:30"></label>
+          <label class="f">복귀 일시<input id="de" type="datetime-local" value="2026-11-13T20:00"></label>
+          <label class="f">숙박(박)<input id="dn" type="number" min="0" value="1"></label>
+          <label class="f">숙박비 실제 결제 총액(원)<input id="dl" type="number" min="0" value="95000"></label>
+          <label class="f">제공받은 식사 수(주최측 등)<input id="dfree" type="number" min="0" value="0"></label>
+          <label class="f">교통수단<select id="dt"><option value="pub">대중교통 (KTX·버스 등)</option><option value="car">자가차량</option><option value="metro">광역시 내 이동 (교통비 없음)</option></select></label>
+          <label class="f" id="w-fare">대중교통 실비(왕복, 원)<input id="dfare" type="number" min="0" value="119600"></label>
+          <label class="f" id="w-km" hidden>왕복 이동거리(km)<input id="dkm" type="number" min="0" value="300"></label>
+          <label class="f" id="w-oil" hidden>출장시작일 유가(원/L, 오피넷)<input id="doil" type="number" min="0" value="1680"></label>
+          <label class="f" id="w-toll" hidden>통행료 실비(원)<input id="dtoll" type="number" min="0" value="12000"></label>
+          <label class="f" id="w-park">주차비 실비(원, 관외 출장 1만 원 이내)<input id="dpark" type="number" min="0" value="8000"></label>
+        </div>
+        <div class="flags"><label class="c"><input type="checkbox" id="dconf"> 학술대회 주최측 지정 숙소 (1박 20만 원 한도)</label></div>
+        <div class="res" id="dres"></div>
+      </div>
+      <div id="trip-loc" hidden>
+        <div class="grid">
+          <label class="f">관내 출장 시간(시간)<input id="lh2" type="number" min="0" step="0.5" value="5"></label>
+          <label class="f">출장 일수<input id="ld2" type="number" min="1" value="1"></label>
+          <label class="f">본교↔산업단지캠퍼스 개인차량 이동(회)<input id="lcar" type="number" min="0" value="0"></label>
+        </div>
+        <div class="res" id="locres"></div>
+      </div>
+      <div id="trip-intl" hidden>
+        <div class="grid">
+          <label class="f">출장자 구분<select id="ig"><option value="2">조교수·직원·그 외(학생 포함)</option><option value="1">교수·부교수</option><option value="0">총장·부총장·처장·학장</option></select></label>
+          <label class="f">출장 국가·도시 (입력하면 등급 자동)<input id="ic" list="countries" value="베트남"></label>
+          <label class="f">등급<select id="igr"><option value="0">가 등급</option><option value="1">나 등급</option><option value="2">다 등급</option><option value="3" selected>라 등급</option></select></label>
+          <label class="f">현지 체재 일수(일비·식비)<input id="idays" type="number" min="0" value="4"></label>
+          <label class="f">현지 숙박(박, 기내 제외)<input id="inight" type="number" min="0" value="3"></label>
+          <label class="f">숙박비 실제 결제 총액(US$)<input id="ilodge" type="number" min="0" value="210"></label>
+          <label class="f">제공받은 식사 수(기내식 제외)<input id="ifree" type="number" min="0" value="1"></label>
+          <label class="f">환율(원/US$, 출장시작일 매매기준율)<input id="ifx" type="number" min="0" value="1400"></label>
+          <label class="f">항공료 실비(원, 일반석)<input id="iair" type="number" min="0" value="620000"></label>
+        </div>
+        <div class="flags"><label class="c"><input type="checkbox" id="idisc"> 숙박비 할인정액 선지급 (상한의 80%, 정산 생략)</label></div>
+        <datalist id="countries"></datalist>
+        <div class="res" id="ires"></div>
+      </div>
+      <div id="trip-stu" hidden>
+        <div class="res"><div class="row"><span><b>2026.8.1 출장분부터 상한액(정액) 내 실비</b>로 지급합니다. 상한 금액은 공문에 없어 계산하지 않습니다.</span></div>
+        <div class="row"><span>· 학생 주도형 활동만, 사업단이 교통·식사·숙박을 제공하면 미지급<br>· 교통비·숙박비·식비·일비(현지 대중교통·택시) 모두 영수증 있을 때만<br>· 학생 개인카드 결제 후 학생 계좌 이체 가능, 영수증 e나라도움 첨부<br>· 교통카드 선충전 등 선결제 불가</span></div>
+        <p><button class="btn ghost" type="button" data-ex="학생 여비 지급 기준">학생 여비 기준 자세히 보기</button></p></div>
+      </div>
+    </div>
+    <div class="calc" id="c-lect">
+      <h2>강사료 계산기</h2>
+      <div class="grid">
+        <label class="f">강사 구분<select id="lg"></select></label>
+        <label class="f">실제 강의시간(시간)<input id="lh" type="number" min="0" max="8" value="2"></label>
+        <label class="f">분<input id="lm" type="number" min="0" max="59" value="40"></label>
+        <label class="f">수강인원(명)<input id="ln" type="number" min="0" value="40"></label>
+        <label class="f">출강 지역<select id="lr"><option value="1">1권역 (울산·부산·경남·대구·경북)</option><option value="2">2권역 (서울·경기 등 그 외)</option><option value="0">재택·온라인</option></select></label>
+      </div>
+      <div class="flags">
+        <label class="c"><input type="checkbox" id="lnight"> 야간(18시 이후)</label>
+        <label class="c"><input type="checkbox" id="loff"> 본교·두왕동 외 교육장(전임교원)</label>
+        <label class="c"><input type="checkbox" id="lpub"> 공직자 등(청탁금지법)</label>
+      </div>
+      <div class="res" id="lres"></div>
+    </div>
+    <div class="calc" id="c-ms">
+      <h2>원고료·교재 개발비 계산기</h2>
+      <div class="grid">
+        <label class="f">구분<select id="mt"><option value="13000">원고료 / 교재 개발 (A4 1매 13,000원)</option><option value="6500">교재 개선 (A4 1매 6,500원)</option><option value="25000">정책연구개발 (A4 1매 25,000원 이내)</option></select></label>
+        <label class="f">A4 매수<input id="ma" type="number" min="0" value="20"></label>
+        <label class="f">PPT 본문 면수<input id="mp" type="number" min="0" value="0"></label>
+        <label class="f">200자 원고지 매수<input id="mw" type="number" min="0" value="0"></label>
+        <label class="f">동영상 차시(개발, 1차시 20만 원)<input id="mv" type="number" min="0" value="0"></label>
+      </div>
+      <div class="res" id="mres"></div>
+    </div>
+    <div class="calc" id="c-meet">
+      <h2>회의비 점검</h2>
+      <div class="grid">
+        <label class="f">참석 인원(명)<input id="en" type="number" min="1" value="12"></label>
+        <label class="f">식비 결제 총액(원)<input id="ea" type="number" min="0" value="420000"></label>
+        <label class="f">다과 총액(원)<input id="es" type="number" min="0" value="0"></label>
+        <label class="f">시간대<select id="et"><option value="0">평일 23시 이전</option><option value="1">평일 23시 이후</option><option value="2">주말·공휴일</option></select></label>
+      </div>
+      <div class="flags">
+        <label class="c"><input type="checkbox" id="eboss"> 사업단장 결재(1인 5만 원)</label>
+        <label class="c"><input type="checkbox" id="eout"> 관외 지역 사용</label>
+        <label class="c"><input type="checkbox" id="eonly"> 연구개발과제 참여연구자만 참석</label>
+      </div>
+      <div class="res" id="eres"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  출처: 「울산대학교 앵커사업 사업비 집행 지침 개정(안)」(2026.10., 울산대학교 앵커사업단, 쪽수는 본문 하단 번호), 「지역성장 인재양성체계(앵커) 사업비 집행 및 관리 지침(개정)」(교육부), 「앵커 사업비 집행 및 관리 관련 FAQ」(교육부, 2026.6.), 「연구과제 여비기준 지침」(울산대, 2026.4.1. 시행), 학생 여비 지급 기준 수정(안) 안내 공문(2026.7.30.), 활어회식당 및 식육식당 법인카드 결제 유의사항(회계팀, 2024.5.22.).
+  울산대 지침은 개정안 단계라 확정본과 다를 수 있으며, 세부 해석은 울산광역시·울산앵커센터와 협의해 결정합니다.
+</footer>
+</div>
+
+<script>
+const KB = [
+// ───────── 총칙·관리 ─────────
+{id:"year",cat:"회계·관리",p:"3",t:"사업연도·회계연도",
+kw:["사업연도","회계연도","사업기간","2월","12월","기간","언제까지"],
+b:`<ul><li><b>사업연도</b>: 매년 3월 1일 ~ 다음해 2월 말일</li><li><b>회계연도</b>: 매년 1월 1일 ~ 12월 31일</li><li>당해연도 사업비는 당해 사업기간 내 지출이 원칙. 사업연도 종료 시점에 미처리 건이 없도록 확인</li><li>12/31 이후 ~ 2월 말까지 집행하려면 <b>e나라도움에서 회계연도 이월 필수</b></li></ul>`},
+{id:"pay",cat:"회계·관리",p:"4",t:"지출방법 (카드·계좌이체·현금)",
+kw:["지출방법","카드","e나라도움카드","보조금전용카드","법인카드","계좌이체","현금","결제","사유서"],
+b:`<ul><li>원칙: <b>e나라도움 카드(보조금전용카드)</b> 또는 <b>계좌이체</b></li><li>세금계산서 발행자에게 계좌이체 또는 수혜자에게 직접 이체</li><li>인건비·회의수당·성과급 등 개인 지급 경비는 계좌이체</li><li>e나라도움 카드 발급 전 등 불가피한 경우 <b>법인카드 일시 허용</b></li><li>카드·이체 모두 불가능한 경우(교통·통신 미비 등)만 <b>현금 + 사유서</b></li></ul>`},
+{id:"evid",cat:"회계·관리",p:"4",t:"인정 증빙과 보존기간",
+kw:["증빙","영수증","세금계산서","매출전표","보존","5년","원본","사본","진본확인"],
+b:`<ul><li>인정 증빙: 카드 매출전표, 전자세금계산서(발행일·품명·수량·단가·금액), 공공기관 영수증, 계좌이체 증빙</li><li>증거서류는 <b>사업 종료 후 5년 보존</b> (e나라도움 등록 자료는 보관 생략 가능)</li><li>원본은 전자문서시스템에 등록, 지출서류에는 사본에 <b>진본확인 도장</b></li></ul>`},
+{id:"rule",cat:"회계·관리",p:"4~5",t:"지출관리 원칙",
+kw:["원인행위","내부품의","지출원인행위","동일 사업연도","국고","대응자금","유흥","유흥업소","제한업종"],
+b:`<ul><li>원인행위(내부품의·지출원인행위서) 없이 지출 불가</li><li>원인행위와 지출행위는 <b>같은 사업연도 내</b> 발생해야 함 (재화 입고·용역 제공이 해당 연도에 이뤄진 경우만 인정)</li><li>국고보조금과 대응자금 집행내역은 구분 처리</li><li>유흥업소 등 카드 제한 업종 사용은 정당 집행으로 불인정</li></ul>`},
+{id:"check",cat:"회계·관리",p:"5",t:"집행점검·부정수급",
+kw:["점검","모니터링","부정수급","부당사용","환수","감사","제재","현장조사"],
+b:`<ul><li>울산앵커센터가 e나라도움으로 <b>월 1회 이상</b> 집행점검</li><li>부당사용 발견 시 자체점검 → 울산앵커센터 보고 → 교육부·울산시 보고</li><li>거짓 신청·목적 외 사용 시 교부결정 취소, 반환, 제재부과금, 수행배제, 명단 공표 가능</li></ul>`},
+{id:"ratio",cat:"편성·변경",p:"6~7",t:"사업비 편성 항목과 인건비 비율",
+kw:["편성","항목","비율","인건비 비율","구간","10억","100억","200억","글로컬","의과대학","COSS","SCOUT","산학협력단지"],
+b:`<p>편성 항목 10개: ①인건비 ②장학금 ③교육·연구 프로그램 개발·운영비 ④교육·연구 환경개선비 ⑤실험·실습장비 및 기자재 구입·운영비 ⑥지역 연계·협업 지원비 ⑦기업 지원·협력 활동비 ⑧성과 활용·확산 지원비 ⑨그 밖의 사업운영 경비 ⑩간접비</p>
+<table><tr><th>총 사업비 구간(앵커)</th><th>인건비 비율</th></tr><tr><td>10억 원 미만</td><td>30% 이내</td></tr><tr><td>10억~100억 미만</td><td>25% 이내</td></tr><tr><td>100억~200억 미만</td><td>20% 이내</td></tr><tr><td>200억 이상</td><td>15% 이내</td></tr></table>
+<p class="note">계산식: Σ[각 구간별 사업비 × 해당 구간 비율]. COSS 40%, SCOUT 25%, 대학산학협력단지 20% 이내. 글로컬·의과대학은 별도 구간 적용.</p>`,
+moe:"교육부 지침은 구간 경계를 '10억 원 이하 / 10억 초과~100억 이하 / 100억 초과~200억 이하 / 200억 초과'로 표기합니다. 정확히 10억·100억·200억 원인 경우 적용 비율이 달라질 수 있어 확인이 필요합니다."},
+{id:"opex",cat:"편성·변경",p:"7",t:"그 밖의 사업운영 경비·간접비 비율",
+kw:["사업운영경비","운영경비","간접비 비율","5%","3%","편성 비율"],
+b:`<ul><li>그 밖의 사업운영 경비: <b>5% 이내</b> (간접비 별도 편성 시 <b>3% 이내</b>)</li><li>간접비: <b>3% 이내</b> (산학협력단 회계·법인회계만 편성 가능)</li><li>COSS는 운영경비 10% 이내, SCOUT·대학산학협력단지는 5% 이내</li><li>대학(교비) 회계는 간접비 비목이 없어 운영경비를 5%까지 쓸 수 있고, 산학협력단 회계로 간접비를 편성하면 운영경비는 3%로 제한 (교육부 FAQ 20)</li></ul>`,
+moe:"SCOUT 간접비는 교육부 지침에서 '5% 이내', 울산대 지침에서 '3% 이내'로 다르게 적혀 있습니다. SCOUT 예산 편성 시 확인하세요."},
+{id:"change",cat:"편성·변경",p:"8",t:"사업비 변경 (항목 간·과제 간)",
+kw:["변경","예산변경","전용","항목간","과제간","비목","세목","신설","수정사업계획서","심의"],
+b:`<ul><li>단위과제 간·항목 내·항목 간 변경은 <b>대학 자체 심의·의결 기구</b>를 통해 변경</li><li>과제 간·항목 간 변경은 <b>울산앵커센터에 사전 통지</b> → 심의 후 수정사업계획서 보고</li><li>e나라도움 <b>보조비목·세목 신설, 비목 간 전용</b>은 울산앵커센터 승인 필요 (e나라도움 신청)</li><li>성과급·간접비 상한 초과 증액 불가</li><li>변경내역은 연차실적보고서에 포함 제출</li><li>협의체 과제는 구성기관 간 사전협의 필요</li></ul>`},
+{id:"carry",cat:"정산·이월",p:"9",t:"사업비 이월",
+kw:["이월","다음연도","차년도","10%","이월신청","이월승인"],
+b:`<ul><li>원칙적으로 이월 불허. 부득이한 경우 <b>보조금 예산 10% 이내(총액)</b>, 2회계연도 초과 불가</li><li><b>사업 종료 30일 전까지</b> 울산앵커센터에 이월 승인 신청 → 센터는 종료 15일 전까지 통보</li><li>이월금은 당해연도 사업비보다 <b>우선 집행</b></li><li>회계연도(12월 말) 이월은 e나라도움에서 별도 승인 절차</li></ul>`},
+{id:"settle",cat:"정산·이월",p:"9~10",t:"정산·반납·외부검증·회계감사",
+kw:["정산","반납","집행잔액","이자","정산보고서","외부검증","검증","회계감사","감사보고서","1억","10억"],
+b:`<ul><li>사업 종료·회계연도 종료 후 <b>2개월 이내</b> e나라도움으로 정산보고서 제출</li><li>국고보조금 <b>1억 원 이상</b>: 외부감사인에게 정산보고서 검증 (수수료 사업비 집행 가능)</li><li>국고보조금 <b>10억 원 이상</b>: 교부결정 후 3개월 이내 감사인 선임, 사업연도 종료 후 4개월 이내 감사보고서 첨부 재무제표 제출</li><li>집행잔액과 이자는 반납</li></ul>`},
+{id:"income",cat:"정산·이월",p:"10~11",t:"수익금·부가세 처리",
+kw:["수익금","부가세","부가가치세","환급","카드포인트","위약금","환율","4대보험 정산","관세"],
+b:`<ul><li>결과물(기자재·저작권·특허·수익금 등)은 협약에 따라 수행 주체 소유 원칙</li><li>위약금, 환차익, 4대보험 정산 반환금, <b>카드포인트</b> 등은 재원 비율에 따라 국비·지방비로 반납</li><li>환급·공제 가능한 부가세·관세는 집행금액에서 제외 (환급 불가 시 증빙 제출)</li><li>부가세 환급금 재투자는 사업계획에 미리 반영하거나 센터 승인</li></ul>`},
+// ───────── 집행기준(교육부) ─────────
+{id:"labor",cat:"인건비·장학금",p:"11~12, 19",t:"인건비 지급 대상과 제한",
+kw:["인건비","급여","보수","신규채용","전담","겸직","산학협력단 직원","본부 직원","퇴직금","4대보험","연장근로수당","PBS"],
+b:`<ul><li>사업 수행을 위해 <b>신규 채용</b>한 인력, 사업을 <b>전담</b>하는 대학 소속 교직원 (인사발령·업무분장 증빙)</li><li>퇴직금·4대보험 포함. 학부·대학원생 등 단기 보조인력 가능</li><li>연장근로수당은 산학협력단 기준을 따름</li></ul><p class="warn">불가: 전담하지 않는 교직원 급여, 타 부서 겸직자 인건비, 보고서 작성·위원회 참석·자체평가·정규강의 등 <b>통상 업무 수당</b>, 사업기간 외 퇴직금 적립</p>`},
+{id:"incentive",cat:"인건비·장학금",p:"11~12, 19, 49",t:"성과급·보직수당",
+kw:["성과급","인센티브","보직수당","1000만원","1,000만원","5%","차등","균등","나눠먹기","체크리스트"],
+b:`<ul><li>단장이 지급계획 수립 → <b>사업운영위원회 심의·의결</b> 후 지급</li><li>보직수당+성과급 합산: <b>사업비 총액의 5% 이내</b>, <b>1인당 연 1,000만 원</b> 이내 (COSS 성과급 1,500만 원)</li><li>평가 결과에 따른 <b>차등 지급</b> 필수, 균등 배분 불가</li><li>대상: 사업에 직접 참여한 교원과 사업 관련 조직 구성원</li><li>「인센티브 집행 체크리스트」(첨부) 작성 후 5년 보존</li></ul><p class="warn">불가: 단순 결재자·단순 회의 참석자, 타 사업과 같은 성과로 중복 지급</p>`},
+{id:"scholar",cat:"인건비·장학금",p:"12~13, 19",t:"장학금",
+kw:["장학금","학자보조금","휴학생","졸업생","수료생","재학생","성인학습자","생활비"],
+b:`<ul><li>학사·석사·박사과정 <b>재학생</b>에게 지급 (석·박사 <b>수료생 가능</b>)</li><li>휴학생·졸업생·졸업유예생 <b>불가</b></li><li>성인학습자(비학위 포함) 대상 학자보조금 가능</li><li>지급 대상·단가·기준·환수기준은 자체 기준으로 관리</li></ul><p class="warn">불가: 사업 미참여 학생, 생활비 보조 성격(근로장학금 제외), 한국장학재단 이중지원 범위 초과</p>`},
+{id:"program",cat:"교육·프로그램",p:"13",t:"교육·연구 프로그램 개발·운영비 (범위·제한)",
+kw:["프로그램","운영비","개발비","현장실습","OJT","국제화","해외연수","교재","워크숍","상품권","자격증"],
+b:`<ul><li>개발비: 신규 교과목·교재·강의법 개발</li><li>운영비: 정책연구비, 강의료, 원고료, 교육학술활동비, 실험실습비, 현장실습·OJT 운영비</li><li>국제화 경비: 교류 경비, 국제화 프로그램 운영비</li></ul><p class="warn">불가: 내부 교직원 본업(기존 강의·연구·학생지도) 수당, 기존 교재 원고료, 개인 연구비·학원비·단순 어학/컴퓨터 자격증 응시료, 외유성 해외연수, 자율 현장실습 지원비, 부속기관 운영비, 통상적 교직원 연수·워크숍, 기업 참여 대가 상품권</p>`},
+{id:"env",cat:"장비·환경",p:"14, 33",t:"교육·연구 환경개선비",
+kw:["환경개선","리모델링","인테리어","공사","냉난방","책상","걸상","임대료","시스템 구축","전산","신축","증축"],
+b:`<ul><li>강의실·실험실·실습실·메이커스페이스 내부설비, 냉난방, 인테리어</li><li>기존 건물·설비 유지보수, 사무실 임대료·관리비</li><li>책상·걸상·실험대 등 교육환경용 기자재 (기자재 포함 전체 환경개선 계약일 때. 별도 구매 계약이면 장비비)</li><li>단장실·행정실 설비 개선, 사업 관련 전산시스템 구축 가능</li><li>행정용 PC 등: 환경개선 계약에 포함되면 환경개선비, 따로 구매하면 장비비 (FAQ 34)</li></ul><p class="warn">불가: 토지 매입, 건물 신·증·개축(예외 있음), 캠퍼스 조경·보도블록·학생회관 등 사업 무관 공사</p>`},
+{id:"equip",cat:"장비·환경",p:"15~16, 34~35",t:"장비·기자재 구입 (3천만 원·1억 원 승인)",
+kw:["장비","기자재","3천만원","3000만원","1억","사전승인","자산관리대장","중요재산","스티커","물품번호","표기","노트북","PC","소프트웨어","라이선스","검수","임차"],
+b:`<table><tr><th>금액</th><th>절차</th></tr><tr><td>3천만 원 미만</td><td>대학 자체 규정, 자산관리대장 등재</td></tr><tr><td>3천만~1억 미만</td><td>대학(협의체) 심의·의결 + <b>울산앵커센터 사전승인</b></td></tr><tr><td>1억 원 이상</td><td>대학(협의체) 심의·의결 + <b>중앙앵커센터 사전승인</b></td></tr></table>
+<ul><li>사업연도 종료 <b>2개월 전까지</b> 구입·설치·검수 완료</li><li>3천만 원 이상은 중요재산 (보고·공시·처분제한)</li><li>3천만 원 이상(또는 공동활용 가능) 장비는 자산등재 후 <b>30일 이내 ZEUS 등록</b> (FAQ 35)</li><li>기한 내 도입 못 하면 이월·변경심의 승인 후 이월 기간 종료 2개월 전까지 도입</li><li>기존 장비와 중복 여부 확인 증빙 구비</li><li>스티커 표기: 물품번호, 구입일자, 물품명 + "본 장비/기자재는 교육부 및 울산시의 지역성장 인재양성체계(앵커) 사업비를 받아 구입한 것입니다."</li></ul><p class="warn">불가: 사업 무관 기자재·서버·SW, 개인 연구용 장비, 사전승인 없는 3천만 원 이상 구입</p>`},
+{id:"region",cat:"교육·프로그램",p:"16, 35",t:"지역 연계·협업 / 기업 지원·협력 활동비",
+kw:["지역연계","협업","지자체","기업지원","R&BD","컨설팅","재직자","포럼","세미나","기업 홍보","기념품"],
+b:`<ul><li>지역: 기관 간 협업, 지산학연 정보공유, 공동교육과정, 지자체 연계 지역문제 해결</li><li>기업: 산학공동 기술개발(R&BD, 국가R&D 사용기준 준용), 애로기술 지도·컨설팅, 재직자 교육, 공동 세미나·포럼</li></ul><p class="warn">불가: 대학 역할 없이 예산만 지원(기업 홈페이지·홍보물 제작 등), 사업 무관 축제(주류·연예인), 기업에 주는 대가성 비용(상품권·기념품)</p>`},
+{id:"outcome",cat:"교육·프로그램",p:"17, 40",t:"성과 활용·확산 지원비",
+kw:["성과확산","기술이전","사업화","특허","지식재산","시제품","창업","성과공유"],
+b:`<ul><li>시험·분석·검사, 특허정보조사, DB 사용료</li><li>기술이전·사업화: 시제품 제작, 지식재산권 출원·등록·유지, 투자유치, 학생 창업 프로젝트</li><li>성과 공유·확산: 세미나·포럼, 위원회 수당</li></ul><p class="warn">불가: 직원 워크숍 등 통상업무 경비, 외유성 출장, 실제 이전이 없는 기술이전 비용</p>`},
+{id:"etcban",cat:"운영경비",p:"17~18",t:"그 밖의 사업운영 경비 (범위·제한)",
+kw:["운영경비","일반수용비","도서","홍보비","경조사","화환","선물","학회비","입시","브로슈어","주류"],
+b:`<ul><li>여비, 교육활동지원비, 도서 구입, 일반수용비(사무용품·인쇄·수수료), 홍보비, 회의비, 행사경비</li></ul><ul><li>사업 홍보용 기념품은 이 항목으로 가능. 목적·사용처를 정하고 수불대장 관리 (FAQ 41)</li><li>전국대학 앵커 사업단 협의회 연회비: 교비회계는 이 항목, 산단회계는 간접비 (FAQ 40)</li></ul><p class="warn">불가: 직원 워크숍, 사업 무관 광고·입시설명회·브로슈어·단순 기념품, 개인 학회비, 내부규정 미준수 회의비·<b>주류</b>, <b>선물·경조사비·화환</b> 등 포상성 비용</p>`},
+{id:"indirect",cat:"운영경비",p:"18",t:"간접비",
+kw:["간접비","산학협력단 회계","총괄관리"],
+b:`<ul><li>산학협력단 회계로 계정 설치한 대학만, 직접 관리 사업비의 <b>3% 이내</b></li><li>사업 무관 인건비·경상운영비 집행 불가</li><li>세부 내역 별도 보고는 없지만 기관이 증빙 구비·관리</li></ul>`},
+// ───────── 세부 집행기준 ─────────
+{id:"inlect",cat:"강사료",p:"20",t:"내부 강사료 (교원·직원·학생)",
+kw:["내부강사","내부 강사료","전임교원","교수 강의","직원 강의","학생 강사","학부생","대학원생","EdgeCam","두왕동","야간"],calc:"lect",
+b:`<table><tr><th>구분</th><th>기준</th></tr><tr><td>전임교원</td><td>시간당 <b>10만 원</b> 이내 · 본교·두왕동 외 교육장(EdgeCam 등) +20% · 야간 +20%</td></tr><tr><td>직원</td><td>시간당 <b>8만 원</b> 이내 · 야간 +20%</td></tr><tr><td>학부생</td><td>시간당 3만 원, 1일 상한 10만 원</td></tr><tr><td>대학원생</td><td>최초 1시간 5만 원, 추가 시간당 3만 원, 1일 상한 20만 원</td></tr></table><p class="note">1인당 1일 최대 4시간. 외부강사는 '강사료(외부)' 기준 적용.</p>`,
+docs:["품의: 강의계획서, 재직증명서·이력서, 성범죄 경력 조회 결과서","결의: 강의자료, 강의결과보고(사진·서명부), 전문가 활용비 청구서, 신분증·통장사본"]},
+{id:"extlect",cat:"강사료",p:"23~25",t:"외부 강사수당 등급표",
+kw:["외부강사","강사료","강사수당","특강","등급","특1급","특2급","일반1급","일반2급","대학교수","교수","공무원","대표","CEO","임원","부장","컨설턴트","변호사","강의료"],calc:"lect",
+b:`<table><tr><th>등급</th><th>대표 대상</th><th>최초 1시간</th><th>초과 매시간</th><th>이동시간수당</th></tr>
+<tr><td>특1급</td><td>장관급·광역단체장·국회의원·대학총장·대기업 회장</td><td>40만</td><td>30만</td><td>30만</td></tr>
+<tr><td>특2급</td><td>차관급·기초단체장·공공기관장·언론사 대표</td><td>30만</td><td>20만</td><td>20만</td></tr>
+<tr><td>일반1급</td><td>대학교수·4급 이상 공무원·기업 임원·전문자격 5년↑·박사 연구원</td><td>25만</td><td>12만</td><td>12만</td></tr>
+<tr><td>일반2급</td><td>5급 이하 공무원·대학강사·부장급·중소기업 임원·전문자격 3년↑</td><td>15만</td><td>8만</td><td>8만</td></tr>
+<tr><td>일반3급</td><td>외국어·전산 강사, 기타</td><td>10만</td><td>5만</td><td>5만</td></tr>
+<tr><td>일반4급</td><td>체육·레크리에이션 등 취미소양</td><td>8만</td><td>4만</td><td>4만</td></tr>
+<tr><td>일반5급</td><td>실기실습 등 교육운영 보조자</td><td>6만</td><td>3만</td><td>3만</td></tr></table>
+<p class="note">공직·민간 중복 시 공직분야 우선. 1인 1일 최대 4시간. 이러닝 촬영은 촬영시간 기준(일 6시간). 공직자 등은 청탁금지법 상한 적용.</p>`,
+docs:["품의: 강의계획서, 재직증명서·이력서, 성범죄 경력 조회 결과서","결의: 강의자료, 강의결과보고(사진·서명부), 전문가 활용비 청구서, 신분증·통장사본"]},
+{id:"travelfee",cat:"강사료",p:"24",t:"출강 강사 여비·이동시간수당 (권역)",
+kw:["이동시간수당","권역","서울","수도권","원거리","여비","교통비","숙박비","출강","재택"],calc:"lect",
+b:`<table><tr><th>권역</th><th>지역</th><th>이동시간수당</th></tr><tr><td>1권역</td><td>울산·부산·경남·대구·경북</td><td>미지급</td></tr><tr><td>2권역</td><td>서울·인천·대전·광주·세종·경기·강원·제주·충남·충북·전북·전남</td><td>지급 (1일 1회)</td></tr></table><ul><li>외부 지역 강사는 교통비·숙박비 실비 별도 지급</li><li>이동 증빙 필요. 재택 강의는 미지급</li><li>공직자 등은 이동시간수당 제외 (학교·언론사 임직원은 가능)</li></ul>`},
+{id:"lecttime",cat:"강사료",p:"25",t:"강의시간 산출 기준",
+kw:["강의시간","산출","30분","1시간 30분","반올림","시간 계산","몇 시간"],calc:"lect",
+b:`<table><tr><th>실제 강의시간</th><th>인정</th></tr><tr><td>1시간 ~ 1시간 30분 미만</td><td>1시간</td></tr><tr><td>1시간 30분 ~ 2시간 30분 미만</td><td>2시간</td></tr><tr><td>2시간 30분 ~ 3시간 30분 미만</td><td>3시간</td></tr><tr><td>3시간 30분 ~ 4시간 30분 미만</td><td>4시간</td></tr></table><p class="note">최초 1시간 도달 후, 초과분은 30분 이상부터 1시간 인정. 30분 미만은 미포함.</p>`},
+{id:"lectextra",cat:"강사료",p:"25~26",t:"할증·야간·다수인 출강·국외 강사",
+kw:["할증","수강인원","100명","250명","야간","18시","다수인","공연","음악","무용","국외강사","해외석학","달러"],calc:"lect",
+b:`<ul><li><b>수강인원 할증</b>(이동시간수당 제외 총액 기준): 100~250명 미만 20%, 250명 이상 30%. 2개 이상 과정 합반은 250명 미만 20%, 이상 30%</li><li><b>야간(18시 이후)</b>: 지급액의 20% 범위 내 추가</li><li><b>다수인 출강</b>(음악·무용 등): 2시간 미만 5인↓50만·6~10인 70만·11인↑90만 / 2시간 이상 70만·90만·110만 이내</li><li><b>국외 소속 강사</b>: 해외석학 $1,500, 교수급 이하 $1,000 이내. 온라인·3일 이상은 국내 기준 가능. 교통비 지급 가능, 숙박비는 단장 사전승인</li></ul>`},
+{id:"meal",cat:"교육·프로그램",p:"21",t:"교육프로그램 식비·멘토링비·임차료",
+kw:["식비","식사","밥","도시락","중식","석식","멘토링","멘토","임차료","대관","버스","차량"],
+b:`<ul><li><b>식비</b>: 1식 3만 원 (다과비 1인 1일 1만 원 지급 시 식비 감액). 수요조사로 인원 파악</li><li><b>멘토링비</b>: 외부 멘토 1회 15만 원, 대학원생 8만 원, 학부생 5만 원 이내</li><li><b>임차료</b>: 차량·대관 등 운영 필요분</li></ul>`,
+docs:["식비 결의: 프로그램 결과보고, 참석자 서명부, 카드영수증/세금계산서","멘토링 결의: 활동 내역서(사진), 활동비 지급내역서, 서명부, 신분증·통장사본","임차료 결의: 결과보고, 서명부, 거래명세서, 카드영수증/세금계산서"]},
+{id:"devfee",cat:"교육·프로그램",p:"22",t:"교과목·교재·동영상 개발(개선)비",
+kw:["교재개발","교과목개발","교재","동영상","콘텐츠","이러닝","개선비","원고료","PPT","차시"],calc:"ms",
+b:`<table><tr><th>구분</th><th>개발</th><th>개선</th></tr><tr><td>A4 1매</td><td>13,000원 이하</td><td>6,500원 이하</td></tr><tr><td>PPT 본문 1면 (2면=A4 1매)</td><td>6,500원 이하</td><td>3,250원 이하</td></tr><tr><td>동영상 1차시(최소 25분, 촬영교안 포함)</td><td>20만 원 이하</td><td>-</td></tr></table><ul><li>공동 제작 시 기여율에 따라 차등</li><li>표지·목차·참고문헌·부록 제외</li><li>결과물에 "본 교재는 지역성장 인재양성체계(앵커) 사업비로 개발되었음(울산대학교 앵커사업단)" 명시</li></ul>`,
+docs:["품의: 개발 계획","결의: 결과물, 전문가 활용비 청구서, 신분증·통장사본"]},
+{id:"committee",cat:"전문가 활용비",p:"26",t:"위원회 참석수당",
+kw:["위원회","참석수당","운영위원회","외부위원","회의수당","화상회의"],
+b:`<ul><li>외부위원 <b>1일 10만 원</b> 이내</li><li>2시간 이상이면 1일 1회 <b>5만 원</b> 추가 가능</li><li>원격지 참석자 교통비·식비·숙박비 가능</li></ul><p class="warn">대학 내부 구성원에게 지급 불가</p>`,
+docs:["품의: 위원회 개최 공문","결의: 회의록, 서명부(화상회의는 화면 사진), 전문가 활용비 청구서, 신분증·통장사본"]},
+{id:"review",cat:"전문가 활용비",p:"27",t:"심사수당",
+kw:["심사","심사수당","평가위원","심사위원장","선정평가"],
+b:`<ul><li><b>1일 20만 원</b> 이내</li><li>4시간 이상이면 10만 원 이내 추가</li><li>심사위원장 5만 원 이내 추가</li><li>원격지 교통비·식비·숙박비 가능</li></ul>`,
+docs:["품의: 전문가 활용 계획, 자격 증빙(이력서·재직증명서)","결의: 심사결과자료, 서명부(서면심사 제외), 청구서, 신분증·통장사본"]},
+{id:"advice",cat:"전문가 활용비",p:"27",t:"자문수당",
+kw:["자문","자문수당","자문회의","서면자문","자문의견서","컨설팅"],
+b:`<ul><li><b>1건 20만 원</b> 이내</li><li>자문회의 4시간 이상: 10만 원 추가</li><li>서면자문 A4 5장 이상: 10만 원 추가</li></ul>`,
+docs:["품의: 전문가 활용 계획, 자격 증빙","결의(회의): 자문자료·회의록, 서명부, 청구서, 신분증·통장사본","결의(서면): 자문의견서, 청구서, 신분증·통장사본"]},
+{id:"interp",cat:"전문가 활용비",p:"27~29",t:"통역·속기·번역료",
+kw:["통역","속기","번역","감수","급행"],
+b:`<ul><li><b>통역</b>: 수행·국제회의 통역 1인 1일 1시간 기준 10만 원 이내</li><li><b>속기</b>(1급 속기사, 시간당): 기본 30만, 녹음재생·전문분야 35만, 외국어 40만, 요점 20만 원</li><li><b>번역</b>(A4 25행 12pt): 한→외 6만/매, 외→한 4만/매, 당일 급행 +30%. PPT 230단어당 한→외 20만·외→한 5만. 영상 10분당 한→외 40만·외→한 20만(전사료 10만)</li></ul>`},
+{id:"ms",cat:"전문가 활용비",p:"29",t:"원고료",
+kw:["원고료","원고","A4","원고지","매수","슬라이드","정책연구 원고"],calc:"ms",
+b:`<table><tr><th>형식</th><th>지급액</th></tr><tr><td>A4 1면 (13p, 줄간격 160%, 300단어)</td><td>13,000원 이내</td></tr><tr><td>PPT 2면 = A4 1면</td><td>13,000원 이내</td></tr><tr><td>200자 원고지 3.5매 = A4 1면</td><td>13,000원 이내</td></tr></table><ul><li>±20% 가감 가능. 표지·목차·참고문헌·부록 제외</li><li>직접인용이 과반인 페이지 제외, 이미지가 과반인 페이지 반액</li><li>신규 강의: 강의시간당 A4 6매, 강사 1인 1주 40매 한도</li><li>정책연구개발은 A4 1면 25,000원까지 별도 가능</li></ul>`,
+docs:["품의: 계획","결의: 결과물, 전문가 활용비 청구서, 신분증·통장사본"]},
+{id:"talent",cat:"학생 지원",p:"30",t:"지역특화인재지원금",
+kw:["지역특화인재지원금","지원금","활동비","학생 지원","학사","석사","박사","수료 후 연구원"],
+b:`<table><tr><th>과정</th><th>프로그램당 월 한도</th><th>1인 월 최대</th></tr><tr><td>학사</td><td>30만 원</td><td>50만 원</td></tr><tr><td>석사</td><td>50만 원</td><td>50만 원</td></tr><tr><td>박사</td><td>70만 원</td><td>70만 원</td></tr></table><ul><li>대상: 울산대·참여대학 학부 재적생, 대학원 재학생, 수료 후 2년 이내 연구원</li><li>세부계획(목적·범위·산출방식) 수립 필수</li></ul>`,
+docs:["품의: 내부품의","결의: 지원금 신청서, 재학/휴학/졸업 증명서, 지급기준 증빙"]},
+{id:"material",cat:"구매",p:"30",t:"재료비",
+kw:["재료비","재료","실습재료","중앙구매","200만원","분할구매","쪼개기"],
+b:`<ul><li>교육·연구 등 사업 수행에 직접 관련된 재료</li><li><b>200만 원 이상은 중앙구매</b></li><li>동일 재료 단기간 <b>분할 구매 불가</b></li></ul>`,
+docs:["품의: 내부품의, 견적서","결의: 거래명세서, 카드영수증/세금계산서, 증빙사진"]},
+{id:"prize",cat:"학생 지원",p:"31",t:"시상금",
+kw:["시상금","상금","경진대회","공모전","대회","수상","우수사례"],
+b:`<table><tr><th>참여인원</th><th>팀</th><th>개인</th><th>총액</th></tr><tr><td>100명 이상</td><td>200만</td><td>60만</td><td>1,000만</td></tr><tr><td>50명 이상</td><td>100만</td><td>40만</td><td>500만</td></tr><tr><td>50명 미만</td><td>50만</td><td>30만</td><td>300만</td></tr></table><ul><li>수상자는 참여자의 <b>50% 이내</b>, 기준 수립 후 공정 심사</li><li>2인 팀은 개인 시상금액 초과 불가</li></ul>`,
+docs:["품의: 프로그램 운영 계획","결의: 결과보고, 평가결과 일체, 시상금 수령확인서, 신분증·통장사본"]},
+{id:"assist",cat:"학생 지원",p:"31",t:"학생보조인력 활동비",
+kw:["학생보조인력","보조인력","근로","알바","아르바이트","시급","근로장학","12,790"],
+b:`<ul><li>국가근로장학금(교외) 기준 이내: <b>2026년 시간당 12,790원</b></li><li>1일 최대 8시간, 1주 최대 14시간</li></ul>`,
+docs:["품의: 학생보조인력 활용 계획(안)","결의: 활동비 청구서, 근무일지, 신분증·통장사본"]},
+{id:"policy",cat:"교육·프로그램",p:"32~33",t:"정책연구비",
+kw:["정책연구","정책연구비","자료수집비","연구보고서","문헌구입"],
+b:`<ul><li>원고료: A4 1면 13,000원 (정책연구개발은 25,000원까지 가능)</li><li><b>자료수집비(학생)</b>: 재적생·수료생, 시간당 15,000원 이하, 1일 8시간·1주 15시간 미만, 과제비의 <b>20% 이내</b></li><li>활동비: 전문가활용비, 문헌구입비, 회의비(식비 3만·다과 1만), 여비(연구과제여비기준지침)</li></ul>`},
+{id:"meeting2",cat:"회의·행사",p:"33",t:"간담회비",
+kw:["간담회","설명회","간담회비"],
+b:`<ul><li>1인 1식 <b>3만 원</b> 이내 (다과·식대 동시 가능)</li><li>다과 1인 1일 1만 원 이내</li></ul>`,
+docs:["품의: 내부품의","결의: 간담회 자료/회의록, 카드영수증, 서명부, 거래명세서(다과)"]},
+{id:"meeting",cat:"회의·행사",p:"41~42",t:"회의비",
+kw:["회의비","회의","식대","다과","커피","저녁","23시","주말","공휴일","50만원","서명부","관외","술","주류","5만원"],calc:"meet",
+b:`<ul><li>1인 1식 <b>3만 원</b> 이내 (사업단장 결재 시 <b>5만 원</b>). 다과 1인 1일 1만 원</li><li><b>내부품의 + 회의록 필수</b> (일시·장소·참석자·내용)</li><li>e나라도움카드 사용 원칙</li><li>평일 23시 이내 원칙. 23시 이후·주말·공휴일은 <b>사유서</b></li><li>관외 지역 사용 시 <b>출장신청서</b> 첨부</li><li><b>50만 원 이상</b>이면 참석자 서명부(서명 날인)</li></ul><p class="warn">주류 구입 불가 (내부규정 미준수 회의비 불인정)</p>`,
+docs:["품의: 내부품의","결의: 회의록, 카드영수증, 참석자 서명부(50만 원 이상)"]},
+{id:"event",cat:"회의·행사",p:"41",t:"행사개최비",
+kw:["행사","성과공유회","워크숍","세미나","포럼","대관","홍보물품","기념품","굿즈","행사 식비","숙박"],
+b:`<ul><li>대관료(장소·숙박. 숙박은 단장 결재로 산정), 식비, 홍보물품, 소모품</li><li>식비(다과 포함) 1식 <b>3만 원</b> (단장 결재 시 5만 원)</li><li>홍보물품은 참석 인원 고려, <b>'울산대학교 앵커사업단' 표기</b></li></ul><p class="warn">사업단 내부 인원 대상 행사에는 홍보물품 집행 불가</p>`,
+docs:["품의: 내부품의, 행사 개최 계획서","결의: 결과보고서(서명부·사진), 카드영수증·세금계산서, 홍보물품 수불부"]},
+{id:"overtime",cat:"운영경비",p:"43",t:"연장근로 식대",
+kw:["연장근로","야근","야근식대","특근","저녁식사","14000","14,000"],
+b:`<ul><li>연장근로 <b>2시간 이상</b> 수행자</li><li>1인당 <b>14,000원</b> 이내</li></ul><p class="warn">회의비를 썼거나 여비로 식비를 받은 경우 불가</p>`,
+docs:["품의: 내부품의","결의: 연장근로 결과보고서 또는 증빙사진, 카드영수증"]},
+{id:"etcop",cat:"구매",p:"43",t:"기타운영비 (소모품·인쇄·사용료·홍보비)",
+kw:["소모품","인쇄","인쇄비","사용료","구독료","노션","협업도구","우편","주차","SMS","홍보","현수막","플래카드","리플릿","홈페이지","100만원","중앙구매"],
+b:`<ul><li>소모품·인쇄: <b>100만 원 이상은 중앙구매</b></li><li>사용료: 임차료, 우편·전화·SMS·주차비, <b>디지털 협업 도구 구독료</b></li><li>홍보비: 홈페이지·PPT·플래카드·리플릿·홍보물품 (홍보물품에 '울산대학교 앵커사업단' 표기)</li></ul>`,
+docs:["품의: 내부품의, 견적서","결의: 거래명세서, 카드영수증/세금계산서, 증빙사진, 홍보물품 수불부"]},
+{id:"training",cat:"운영경비",p:"44",t:"교육훈련비",
+kw:["교육훈련","교육훈련비","연수","직무교육","교육비","수강료"],
+b:`<ul><li>전담인력·참여교원 대상 <b>교육계획 수립 후</b> 집행</li><li>사업 목적에 맞는 교육만 가능 (단순 어학·자격증·학원 수강료 불가)</li></ul>`,
+docs:["품의: 내부품의(교육계획 또는 공문), 견적서","결의: 교육수료 증빙, 카드영수증/세금계산서"]},
+{id:"rnd",cat:"연구개발과제",p:"35~40",t:"연구개발과제 (학생인건비·연구수당 등)",
+kw:["연구개발","R&D","학생인건비","연구수당","외부전문기술","40%","논문게재료","사사","사사표기","ZEUS","연구재료","소프트웨어 활용비","연구실운영비","학회"],
+b:`<ul><li>미규정 사항은 산학협력단 「연구비 관리지침」</li><li><b>학생인건비 월 상한</b>: 박사 300만, 석사 220만, 학사 130만 원 (계상률 합 100% 이하)</li><li><b>외부 전문기술 활용비</b>: 협약금액의 40% 이내, 같은 연구실 소속 불가</li><li>참여연구자만 참석한 회의는 식비·다과비 불가</li><li>지식재산권 출원·등록·유지비는 연구활동비로 불가</li><li><b>연구수당</b>: 인건비(학생인건비 포함)의 20% 이내. 인건비 감액 시 함께 감액</li><li>논문게재료는 사사표기 논문만: "…지역성장 인재양성체계(앵커) 사업의 결과입니다. (2026-앵커-07-001)"</li><li>참여연구자 전화요금·제세공과금 불가</li></ul>`},
+{id:"matching",cat:"편성·변경",p:"46",t:"보조비목·세목 매칭 (e나라도움)",
+kw:["보조비목","보조세목","비목","세목","110","210","220","240","일반수용비","업무추진비","사업추진비"],
+b:`<ul><li>인건비 → 인건비(110): 보수·기타직보수·일용임금·기타인건비</li><li>장학금 → 보전금(310): 포상금 등</li><li>프로그램 운영비 → 보전금(310) 보상금, 운영비(210) 일반수용비·재료비·일반용역비, 여비(220)</li><li>환경개선비 → 운영비(210) 시설장비유지비, 건설비(420)</li><li>장비비 → 운영비(210) 임차료·시설장비유지비, 유형자산(430) 자산취득비</li><li>기업지원 → 연구개발비(260)</li><li>그 밖의 운영경비 → 운영비(210) 일반수용비·공공요금·특근매식비·임차료·유류비·기타운영비, 여비(220), 업무추진비(240)</li></ul>`},
+{id:"laws",cat:"회계·관리",p:"1~2",t:"적용 법령·상위 지침",
+kw:["법령","보조금법","국가계약법","청탁금지법","김영란법","계약","조달","현장실습학기제","상위규정","가이드"],
+b:`<ul><li>보조금 관리에 관한 법률, 국고보조금 통합관리지침, 교육부 국고보조사업 관리규정, 지역성장 인재양성체계 운영규정</li><li>계약·구매: 국가계약법, 조달사업법</li><li>외부강의 사례금: <b>청탁금지법</b></li><li>현장실습: 대학생 현장실습학기제 운영 규정</li><li>교육부 앵커 사업비 집행·관리 지침, 울산광역시 RISE 사업비 집행 가이드(안)</li><li>세부 의문사항은 울산광역시·울산앵커센터와 협의</li></ul>`},
+{id:"bribe",cat:"강사료",p:"24",t:"공직자 등 강사 (청탁금지법)",
+kw:["공직자","공무원 강사","청탁금지법","김영란법","사례금 상한","국립대 교수","국립대"],
+b:`<ul><li>공직자 등은 청탁금지법 시행령 제25조 사례금 상한과 소속기관 행동강령 적용</li><li>강의료·원고료·출연료 등 명목과 무관하게 <b>모든 사례금 합산</b></li><li>소속기관에서 여비를 못 받는 경우, 울산시 여비조례 내 실비 교통·숙박·식비는 사례금에서 제외</li><li>이동시간수당 지급 불가 (학교·학교법인·언론사 임직원은 가능)</li><li>국가대학법인 국립대는 대학교수 기준</li></ul>`}
+];
+
+// ───────── 여비 (연구과제여비기준지침 2026.4.1 + 앵커 지침 + 학생 여비 공문) ─────────
+const TRIP_SRC="연구과제여비기준지침(2026.4.1)";
+KB.push(
+{id:"trip",cat:"여비",p:"42 / 여비지침 제3~9조",t:"여비 공통 원칙 (앵커 지침)",calc:"trip",
+kw:["여비","출장","출장비","중복","타 사업","항공료","e나라도움카드","결과보고서","출장신청","사후","15일","7일","컨소시엄"],
+b:`<ul><li>「울산대학교 연구과제여비기준지침」 준용 (컨소시엄 참여기관은 자체 기준)</li><li>출장 목적이 앵커사업과 관련 있어야 하고 <b>출장일 전 사전 신청·승인</b></li><li>부득이한 사후 신청은 출장 종료 후 <b>7일 이내</b> 사유서 첨부</li><li>여비 청구는 출장 종료 후 <b>15일 이내</b> 증빙 첨부</li><li>같은 출장으로 타 사업·타 과제 <b>중복 수혜 불가</b> (책임은 신청자)</li><li>국외 항공료는 <b>e나라도움카드 필수</b>, 국외는 결과보고서 필수</li><li>여비는 출장자별 개인 계좌로 개별 지급</li></ul>`,
+moe:"교육부 지침: 여비는 대학 자체규정 준용, 단 국립대학은 공무원 여비규정 준용.",
+docs:["국내 품의: 출장신청서","국내 결의: 출장결과보고서, 출장정산신청서(교통비·숙박비 영수증)","국외 품의: 출장신청서(출장자·기간·장소·목적·산출내역·일정)","국외 결의: 결과보고서(내부결재), 정산신청서, 출입국사실증명서, 변경 시 논문초록·발표자료"]},
+{id:"tripdom",cat:"여비",p:"여비지침 제5·8조",t:"국내여비 지급기준 (일비·식비·숙박비)",calc:"trip",
+kw:["국내여비","국내출장","일비","식비","숙박비","숙박","25000","25,000","12000","12,000","10만원","제1호","제2호","제3호","직원 출장","교수 출장","KTX","특실","일반실","학술대회 숙박"],
+b:`<table><tr><th>구분</th><th>해당자</th><th>일비(1일)</th><th>식비(1식)</th><th>숙박(1박 상한)</th><th>철도·항공</th></tr>
+<tr><td>제1호</td><td>총장</td><td>30,000</td><td>20,000</td><td>150,000</td><td>특실·비즈니스</td></tr>
+<tr><td>제2호 가</td><td>부총장</td><td>25,000</td><td>12,000</td><td>100,000</td><td>특실·비즈니스</td></tr>
+<tr><td>제2호 나</td><td>부교수 이상, 팀·실장 이상</td><td>25,000</td><td>12,000</td><td>100,000</td><td>철도 특실, 항공 일반석</td></tr>
+<tr><td>제3호</td><td>조교수 이하, 비전임, 일반 직원, 연구원, 학생연구자 등</td><td>25,000</td><td>12,000</td><td>100,000</td><td>일반실·일반석</td></tr></table>
+<ul><li>일비·식비는 <b>정액</b>, 숙박비·교통비는 <b>실비</b>(상한 내)</li><li>학술대회 주최기관 지정 숙소 이용 시 1박 <b>최대 20만 원</b> 실비 (입증서류 필요)</li><li>2026.4.1 개정: 식비 10,000→12,000원, 일비 20,000→25,000원, 제3호 통합</li></ul>`},
+{id:"tripcalc",cat:"여비",p:"여비지침 제6·7·8조",t:"국내 교통비·자가차량·식수 계산 방법",calc:"trip",
+kw:["교통비","자가차량","자차","유류비","기름값","주차비","통행료","하이패스","10km","리터","식수","조식","중식","석식","기준시간","제주","리무진","광역시 내","시내"],
+b:`<ul><li>대중교통 이용 원칙, <b>실비</b>(승차권 영수증)</li><li><b>자가차량</b>: 왕복 이동거리 10km당 1L × 출장시작일 오피넷 고시 유가 (전기차는 LPG, 수소차는 휘발유 기준). 2인 이상 동승 시 <b>1인만</b> 지급</li><li>통행료 실비, 주차비 <b>1만 원 이하 1회</b>. 울산공항·울산역·김해공항 주차비 1만 원 한도</li><li><b>특별시·광역시·특별자치시(도) 내 이동은 교통비 미지급</b></li><li>내륙 항공은 열차·버스 운임 기준 실비 범위 내</li><li>교통비는 출장기간 전후 1일(주말·공휴일 제외) 이용분만 인정</li><li><b>식수 기준시간</b>: 조식 08~09시, 중식 12~13시, 석식 18~19시. 출발·도착 시각 기준으로 매 식 단위 계산</li><li>출발·종료 시각은 출장신청서 기준 (복명서·교통비 영수증 참고)</li></ul>`},
+{id:"trippark",cat:"여비",p:"여비지침 제7조",t:"관외 출장 주차비",calc:"trip",
+kw:["주차","주차비","주차료","관외","관외출장","울산역","울산공항","김해공항","공항 주차","역 주차","10,000","10000","1만원"],
+b:`<ul><li>관외 출장 시 주차비는 <b>1만 원 이내 실비</b>로 지급 (영수증 첨부)</li><li>자가차량 출장지 주차, 울산역·울산공항·김해공항 주차 모두 1만 원 한도</li><li>2인 이상 동승 시 1인에게만 지급</li><li>관내(울산 시내) 출장은 일비만 지급하므로 주차비 별도 정산 없음</li></ul><p class="warn">주차권 선구매(선결제)는 불가 (교육부 FAQ 14)</p>`,
+docs:["결의: 출장정산신청서, 주차 영수증(일시·장소 표시)"]},
+{id:"triplocal",cat:"여비",p:"여비지침 제7조 3호",t:"관내여비 (울산 시내 출장)",calc:"trip",
+kw:["관내","관내여비","관내출장","시내출장","울산 안","4시간","산업단지캠퍼스","두왕동","캠퍼스 이동","5천원","5,000"],
+b:`<ul><li>관내 출장은 교통비·숙박비 없이 <b>현지교통비(일비)만</b></li><li>1일 <b>4시간 이상 2만 원</b>, 4시간 미만 <b>1만 원</b></li><li>본교 ↔ 산업단지캠퍼스 개인차량 이동: <b>차량 1대당 1회 5천 원</b> (2026.4.1 개정, 종전 1만 원)</li></ul>`},
+{id:"tripintl",cat:"여비",p:"여비지침 제8조 2호",t:"국외여비 지급기준 (US$)",calc:"trip",
+kw:["국외여비","국외출장","해외출장","해외","외국","달러","US$","환율","등급","가등급","나등급","다등급","라등급","일본","미국","중국","베트남","유럽","항공","일반석","할인정액","인천공항","기내"],
+b:`<table><tr><th>구분</th><th>등급</th><th>일비</th><th>숙박(상한)</th><th>식비</th><th>1일 계</th></tr>
+<tr><td rowspan="4">총장·부총장·처장·학장</td><td>가</td><td>40</td><td>282</td><td>133</td><td>455</td></tr><tr><td>나</td><td>40</td><td>207</td><td>99</td><td>346</td></tr><tr><td>다</td><td>40</td><td>162</td><td>72</td><td>274</td></tr><tr><td>라</td><td>40</td><td>108</td><td>61</td><td>209</td></tr>
+<tr><td rowspan="4">교수·부교수</td><td>가</td><td>35</td><td>223</td><td>107</td><td>365</td></tr><tr><td>나</td><td>35</td><td>160</td><td>78</td><td>273</td></tr><tr><td>다</td><td>35</td><td>130</td><td>58</td><td>223</td></tr><tr><td>라</td><td>35</td><td>85</td><td>49</td><td>169</td></tr>
+<tr><td rowspan="4">조교수·직원·그 외(학생 포함)</td><td>가</td><td>30</td><td>176</td><td>81</td><td>287</td></tr><tr><td>나</td><td>30</td><td>137</td><td>59</td><td>226</td></tr><tr><td>다</td><td>30</td><td>106</td><td>44</td><td>180</td></tr><tr><td>라</td><td>30</td><td>81</td><td>37</td><td>148</td></tr></table>
+<ul><li>항공은 <b>일반석</b> (총장·부총장 예외), 발권금액·여행사 Invoice 기준</li><li>숙박·식비는 현지 실 체재기간만 (기내 숙박·기내식·주최측 제공 식사 제외)</li><li>숙박비는 상한액 80% <b>할인정액</b> 선지급 가능(정산 생략)</li><li>국외 일비는 현지 도착·출발 시각 기준</li><li>식비는 1일 단위, 필요 시 1식 = 1일 식비의 1/3 (소수점 절사)</li><li>환율: 출장시작일 매매기준율</li><li>울산 출발, 인천공항 12시 이전 항공편이면 전일 숙박비 가능 (일비·식비 제외)</li><li>국외 출장기간: 행사 전일 ~ 종료 다음 날까지 산정 가능</li></ul>
+<p class="note">등급 예) 가: 도쿄·뉴욕·런던·파리·홍콩·싱가포르 등 / 나: 일본(그 외 도시)·미국·독일·영국·캐나다 등 / 다: 중국·호주·말레이시아·인도네시아·태국·체코 등 / 라: 베트남·필리핀·캄보디아·몽골·라오스 등</p>`,
+moe:"앵커 지침은 국외 항공료를 e나라도움카드로 결제하도록 정하고 있습니다. 여비지침의 '연구비카드(법인카드)' 규정보다 앵커 지침을 우선 적용하세요."},
+{id:"tripstudent",cat:"여비",p:"사업단 공문(2026.7.30)",t:"학생 여비 (2026.8.1 출장분부터)",
+kw:["학생 여비","학생 출장","학생 교통비","학생 숙박","학생주도","학생 활동","현장견학","PBL","실비","정액"],
+b:`<ul><li>2026.7.31까지: 정액 지급 → <b>2026.8.1 출장분부터 상한액(정액) 내 실비 지급</b></li><li>대상: 앵커사업비를 활용한 <b>학생 주도형 활동</b></li><li>사업단 프로그램으로 교통·식사·숙박을 제공받으면 <b>미지급</b></li><li>항목: 교통비, 숙박비, 식비, 일비(출장지 내 대중교통·택시 등)</li><li><b>영수증 제출 시에만</b> 실비 지급</li><li>프로그램별 예산계획에 따라 감액·미지급 가능</li><li>학생이 개인카드로 결제 후 영수증 확인하여 학생 계좌로 이체 가능, 영수증은 e나라도움에 모두 첨부 (교육부 FAQ 15)</li><li>교통카드 미리 충전해 나눠주는 <b>선결제 방식은 불가</b> (교육부 FAQ 14)</li></ul><p class="note">학생 여비 상한액은 공문에 금액이 없어 이 페이지에서는 계산하지 않습니다. 사업단 기준(행정지원팀 안내)으로 확인하세요.</p>`},
+{id:"seafood",cat:"회의·행사",p:"회계팀 공지(2024.5.22)",t:"활어회·식육식당 법인카드 결제 주의",
+kw:["활어회","횟집","회","정육식당","식육식당","고기집","초장집","부가세","부가가치세","면세","영수증","적격증빙"],
+b:`<ul><li>초장집을 겸하는 활어회식당·식육식당에서 <b>부가세 미포함 영수증</b>이 나오는 사례가 많음</li><li>농축산물 직접 판매는 면세라 회·고기를 단순 구매한 것으로 오인 → <b>적격증빙 불인정, 환수</b> 우려</li><li>반드시 <b>카드영수증 수취 + 부가세 포함 여부 확인</b></li><li>같은 식당의 활어회·육류 구입 영수증과 식사 영수증을 함께 내면 적격증빙 인정</li><li>본교로 전송되는 법인카드 데이터에 부가세가 누락될 수 있으니 지출 완료 전까지 카드영수증 보관</li></ul>`}
+);
+
+// ───────── 교육부 FAQ (2026.6.) ─────────
+const FAQ=[
+["1","적용범위","대학·기업이 자율적으로 투자하는 예산도 이 지침을 적용하나요?","사업비는 국고보조금과 지자체 대응자금으로 구성됩니다. 대학·기업이 자율적으로 투자하는 예산은 '연계투자'로 지침 대상이 아닙니다. 다만 앵커 계획 수립 때 '총 사업비'로 관리하기로 협약했다면 지침이 적용됩니다.",["연계투자","자체부담","대학부담","기업투자","사업비 범위"]],
+["3","적용범위","기업에 사업비를 직접 지원할 수 있나요?","대학과 협의체를 구성한 기업 등은 지역앵커위원회 심의·의결을 거쳐 지자체 대응자금을 받을 수 있습니다. 이때 인건비·간접비는 편성·집행할 수 없고, R&BD는 국가연구개발사업 연구개발비 사용기준을 준용합니다.",["기업 지원","기업에 지급","협의체 기업","기업 사업비"]],
+["5","적용범위","협의체 참여 기관(폴리텍·출연연 등)도 인건비·간접비를 쓸 수 있나요?","운영규정 별표1의 학교·기관은 가능합니다. 편성 비율은 그 기관이 직접 집행·관리하는 예산 기준입니다. PBS 기관은 참여율에 따라 인건비 지급 가능(증빙 필요). 기업 등은 불가합니다.",["협의체","참여기관","폴리텍","출연연","PBS"]],
+["9","계약","사립대도 국가계약법에 따라 계약해야 하나요?","네. 사업비를 집행하는 모든 기관은 국가계약법·조달사업법·국고보조금 통합관리지침에 따라 계약해야 합니다. 부적정 사례: 담합 입찰, 최저가가 아닌 업체와 계약, 근거 없는 계약금액 조정, 지체상금 미부과, <b>수의계약 한도 회피용 분할계약</b>, 전자조달 미이용, 검수 시 홍보 이미지 사용.",["국가계약법","계약","수의계약","입찰","분할계약","검수","나라장터","조달"]],
+["11","회계","사업연도와 회계연도가 다른데 정산은 언제 하나요?","회계연도 종료 시 잔액을 e나라도움으로 전액 회계연도 이월하므로, 실질적으로는 <b>2월 말일(사업기간 종료일) 기준 2개월 이내</b> 정산합니다. 사업연도 이월을 했다면 이월금 집행기간 종료 후 2개월 이내.",["정산 시기","정산 언제","2월","회계연도 이월"]],
+["13","회계","단위과제별로 교비회계·산단회계를 나눠 관리할 수 있나요?","가능합니다. 다만 교비회계 재원은 산단회계로 전출해 집행하기 어려우니 과제 성격, 과제 간 예산 변경 가능성, 관리 효율을 고려해 정하세요.",["교비회계","산단회계","산학협력단 회계","회계 구분"]],
+["14","지출","행사 등을 위해 사업비를 선결제할 수 있나요?","<b>불가</b>합니다. 원인행위 없이 지출할 수 없습니다. 예) 학생 교통카드 미리 충전해 지급, 회의비 선결제·식권 사전 구매, 주차권 선구매. 사적 유용 시 보조금법상 제재 대상입니다.",["선결제","미리 결제","식권","교통카드 충전","주차권","선구매","충전"]],
+["15","지출","학생이 직접 결제하는 교통비·재료비도 e나라도움카드로 해야 하나요?","학생(팀)이 개인카드 등으로 결제하고, 영수증 확인 후 사업단이 학생 계좌로 이체하는 방식이 가능합니다. 학생이 결제한 영수증은 e나라도움에 <b>모두 첨부</b>해야 합니다.",["학생 결제","개인카드","학생 계좌","캡스톤","창업동아리","재료비 학생","정산 이체"]],
+["17","지출","교내 기숙사·게스트하우스·회의장 사용료를 집행할 수 있나요?","같은 사업자가 운영하는 부대시설 사용료는 <b>내부거래라 불가</b>합니다(산학협력단↔대학 간 거래 포함). 같은 대학이라도 <b>별도 사업자</b>가 운영하는 시설 사용료는 가능합니다. ZEUS 등록 공동활용장비 사용료 등은 내부거래로 보지 않습니다.",["내부거래","기숙사","게스트하우스","교내 시설","대관료 교내","회의장","부대시설"]],
+["18","편성","사업비 항목과 e나라도움 보조비목이 다른데 어떻게 관리하나요?","사업계획서 항목 기준으로 집행 용도에 맞는 e나라도움 비목·세목을 고릅니다. 집행 등록 시 용도에 사업비 항목을 함께 적어 두세요. 예) '[단위과제1] 교육·연구 프로그램 개발·운영비 – 캡스톤 OOO팀 재료 구입' → 운영비(210)-재료비(11).",["보조비목","비목","세목","e나라도움 등록","집행용도"]],
+["19","편성","항목별 편성 비율은 단위과제별로 계산하나요?","아닙니다. 대학이 협약해 <b>직접 집행·관리하는 당해연도 총 사업비 합계</b> 기준입니다(협의체 기관 직접 집행분 제외). 글로컬·의대·초광역·산학협력단지는 별도 관리.",["편성 비율","단위과제별","비율 계산"]],
+["20","편성","교비회계로 편성하면 간접비를 못 쓰나요?","교비회계에는 간접비 비목이 없습니다. 대신 '그 밖의 사업운영 경비'를 5%까지 쓸 수 있습니다. 간접비를 편성하는 산단회계는 운영경비 3%.",["간접비","교비회계","운영경비 5%"]],
+["21","변경","단위과제 간 예산 변경 비율 제한이 있나요?","별도 제한 없이 칸막이 없이 활용할 수 있습니다. 다만 지역앵커센터에 <b>사전 통지</b>해야 하고, 과제별 주요 내용과 성과지표는 달성해야 합니다.",["과제 간 변경","예산 변경 한도","전용 한도"]],
+["22","변경","과제 간 변경이 자유로운데 비목 신설·전용은 왜 승인받나요?","보조사업 정산보고서 작성지침에 따라 보조비목·세목 신설과 비목 간 전용은 e나라도움으로 지역앵커센터 승인을 받아야 합니다. 모든 항목 변경이 비목 변경을 동반하는 건 아니니, 비목이 바뀌는 건만 추가 승인 받으면 됩니다.",["비목 신설","비목 전용","세목 신설","승인"]],
+["23","이월","지출원인행위가 끝난 건만 이월할 수 있나요?","아닙니다. 원인행위 전이어도 이월해 집행 가능합니다. 이월금은 원칙적으로 전년도 계획 내용에 쓰지만 연속성이 있으면 당해 계획에도 사용 가능. <b>인건비는 원칙적으로 이월 집행 불가</b>.",["이월","원인행위","이월금 사용","인건비 이월"]],
+["24","이월","이월 절차는 어떻게 되나요?","회계연도 이월(e나라도움)과 사업연도 이월(공문) 두 가지입니다. 사업연도 이월은 사업기간 종료 D-30일 신청, D-15일 승인, 차년도에 실제 이월금액 보고. 한도는 당해 총사업비의 10%.",["이월 절차","D-30","이월 신청"]],
+["26","인건비","본부·산단 직원이 앵커 업무를 전담하면 인건비를 받을 수 있나요?","기존 고유 업무에서 <b>완전히 배제</b>되고 인사발령·업무분장으로 앵커만 전담하는 것이 확인되면 가능합니다. 기관이 원래 부담하던 인건비를 대신 내는 용도는 불가. 국가공무원 신분 교직원은 불가.",["본부 직원","산학협력단 직원","전담","인건비 대체","겸직"]],
+["27","인건비","여러 과제(앵커·글로컬·COSS)에 참여하면 성과급 상한은?","합산 <b>연 1인 1,000만 원</b>(COSS 포함 시 COSS분 1,500만 원 범위). 예) 앵커 800+글로컬 200+COSS 500 → 가능 / 앵커 800+글로컬 300 → 불가(1,000만 초과). 전담조직 소속자 인건비는 같은 과제 계정에서만 지급.",["성과급 상한","여러 과제","중복 성과급","1000만원","1,500만원"]],
+["28","장학금","근로장학금은 인건비로 집행하나요?","'장학금' 항목으로 집행합니다(2026.3 개정). 학생 프로그램 활동 지원 현금성 경비·멘토링수당은 '교육·연구 프로그램 개발·운영비'.",["근로장학금","근로장학","장학금 항목"]],
+["30","인건비","보직수당은 누가 받을 수 있나요?","원칙적으로 사업단장. 내부 직제상 센터·부서장이 일정 범위의 책임을 지면 대상이 될 수 있으며, 내부 규정에 보직 범주와 역할이 명확해야 합니다. COSS는 보직수당 불가.",["보직수당","센터장","단장 수당"]],
+["31","프로그램","학생에게 장학금성(현금성) 지원을 할 수 있나요?","'교육·연구 프로그램 개발·운영비'로 장학금성 경비, 멘토링 수당, 표준 현장실습학기제 학생 교통비·숙박비 등을 지급할 수 있습니다. 자율 현장실습학기제 지원비는 불가. 목적·범위·산출방식을 기준으로 정해야 합니다.",["현금성","학생 지원금","현장실습 교통비","활동비"]],
+["32","전문가 활용비","내부 교직원에게 교재개발비·자문료·심사비·강의료를 줄 수 있나요?","'업무 관련성'으로 판단합니다. <b>사업단 전담인력은 앵커 업무가 본업이라 별도 수당 불가</b>(다른 과제 교재 개발 참여도 불가). 참여교원은 본인 앵커 업무 범위의 강의·연구·지도 수당 불가. 본업 외 추가 활동(지역민·기업 대상 강의 등)은 기준을 세워 지급 가능.",["내부 교직원 수당","내부 강사","자문료 내부","심사비 내부","전담인력 수당","교재개발 내부"]],
+["33","프로그램","프로그램 운영을 위탁(연구)용역할 수 있나요?","창업캠프, 국외 교육프로그램 등 사업과 직접 관련된 위탁용역은 자체 기준을 세워 가능합니다. 대학 본연의 역할을 통째로 위탁하는 것은 안 되고, 국가계약법에 따라 계약합니다.",["위탁","용역","외주","위탁용역","대행사"]],
+["34","장비","행정용 PC는 어느 항목으로 사나요?","환경개선 전체 계약에 포함되면 '교육·연구 환경개선비', 따로 구매하면 '실험·실습장비 및 기자재 구입·운영비'.",["PC","컴퓨터","노트북","행정용 기자재","모니터"]],
+["35","장비","앵커 사업비로 산 장비도 ZEUS에 등록하나요?","네. 3천만 원 이상이거나 공동활용 가능한 연구시설·장비는 자산등재 후 <b>30일 이내</b> ZEUS 등록. COSS·산학협력단지는 UIONE에도 등록.",["ZEUS","장비 등록","공동활용"]],
+["36","장비","소프트웨어 최소 계약기간(1년)이 사업기간을 넘으면?","최소 계약 단위임을 소명하면 해당 계약기간 금액 전부 집행할 수 있습니다.",["소프트웨어","구독","라이선스","1년 계약","사용료"]],
+["37","장비","장비를 사업연도 종료 2개월 전까지 도입 못 하면?","이월 또는 변경심의로 차년도 도입 승인을 받고, 이월 기간 종료 2개월 전까지 도입해야 합니다. 1차연도('25) 사업비 도입분은 '26.8.31.까지 허용.",["장비 도입 기한","검수 지연","2개월 전"]],
+["38","연구개발","산학 공동연구의 학생인건비는 어느 항목인가요?","'인건비'가 아닌 <b>'기업 지원·협력 활동비'</b>에서 연구개발비 사용용도에 준해 집행합니다.",["학생인건비","공동연구","R&BD"]],
+["39","성과","논문·특허 사사문구와 과제번호는?","(국문) 본 과제(결과물)는 0000년도 교육부 및 울산광역시의 재원으로 울산앵커센터의 지원을 받아 수행된 지역성장 인재양성체계(앵커)의 결과입니다.(과제관리번호) — 번호 형식: 사업연도-ANCHOR-07(울산)-기관번호, 예) 2026-ANCHOR-07-001.",["사사","사사문구","과제번호","논문","특허","acknowledgement"]],
+["40","운영경비","전국대학 앵커 사업단 협의회 연회비를 낼 수 있나요?","가능합니다. 산단회계는 간접비, 교비회계는 그 밖의 사업운영 경비로 편성.",["협의회","연회비","회비"]],
+["41","운영경비","사업 홍보용 기념품을 만들 수 있나요?","'그 밖의 사업운영 경비'로 가능합니다. 내부직원용 기념품, 고급 주류·고가 브랜드·고가 전자기기 등 사치성 품목은 불가. 목적·사용처를 정하고 수불대장으로 관리.",["기념품","굿즈","홍보물품","수불"]],
+["42","정산","간접비도 정산하나요?","세부 내역 보고 없이 <b>총액 정산</b>합니다(기관으로의 이체 내역 보고). 세부 증빙은 기관이 자체 관리.",["간접비 정산"]],
+["46","기타","RIS 점검 결과 반영할 사항은?","특수관계자(가족·제자) 대상 전문가 활용비 방지 확인서, 분할 수의계약·소액지출 모니터링, 청렴서약서, 국외출장 검증 강화(현지사진, 계획서·보고서 검증, 개인일정 포함 여부), 구매·계약 실무교육 연 2회.",["특수관계자","가족","제자","청렴서약","국외출장 검증","현지사진","외유성"]]
+];
+FAQ.forEach(([n,c,q,a,kw])=>KB.push({id:"faq"+n,cat:"교육부 FAQ",faq:true,p:"FAQ "+n,t:q,kw:kw,b:`<p>${a}</p>`,fcat:c}));
+
+</script>
+<script>
+/* ───────── 최근 변경사항: 새 항목은 맨 위에 추가 ─────────
+   d: 날짜, tag: 분류(기준 변경·기능·자료 반영 등), t: 제목, items: 세부 내용 */
+const CHANGES=[
+{d:"2026-11-17",tag:"기능",t:"최근 변경사항 칸 신설",items:["지침·공문이 바뀌어 페이지를 고칠 때마다 이곳에 날짜별로 기록합니다"]},
+{d:"2026-11-17",tag:"현재 반영 기준",t:"이 페이지가 따르는 기준 자료",items:["울산대 앵커사업 사업비 집행지침 개정(안) (2026.10.) — 확정본 아님","교육부 앵커 사업비 집행·관리 지침, 교육부 FAQ (2026.6.)","울산대 연구과제 여비기준지침 (2026.4.1. 시행): 국내 일비 25,000원·식비 12,000원, 관내 산업단지캠퍼스 차량 이동 1회 5천 원","학생 여비: 2026.8.1. 출장분부터 상한액 내 실비 지급 (사업단 공문 2026.7.30.)","활어회·식육식당 법인카드 결제 유의사항 (회계팀, 2024.5.22.)"]}
+];
+</script>
+<script>
+const $=s=>document.querySelector(s);
+(function(){const box=document.getElementById("changes");if(!CHANGES.length){box.hidden=true;return;}
+  const fmt=d=>d.replace(/-/g,".");const top=CHANGES[0];
+  const recent=(Date.now()-new Date(top.d+"T00:00:00+09:00"))/864e5<=14;
+  box.querySelector("summary").innerHTML=`<b>최근 변경사항</b>${recent?'<span class="new">NEW</span>':""}<span class="latest">${fmt(top.d)} · ${top.t}</span>`;
+  box.querySelector("ol").innerHTML=CHANGES.map(c=>`<li><time datetime="${c.d}">${fmt(c.d)}</time><div><span class="tag">${c.tag}</span><b>${c.t}</b>${c.items&&c.items.length?`<ul>${c.items.map(i=>`<li style="display:list-item;border:0;padding:0">${i}</li>`).join("")}</ul>`:""}</div></li>`).join("");})();
+const won=n=>Math.round(n).toLocaleString("ko-KR")+"원";
+const strip=h=>h.replace(/<\/(li|tr|p)>/g,"\n").replace(/<\/t[dh]>/g," | ").replace(/<[^>]+>/g,"").replace(/\n{2,}/g,"\n").trim();
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* 탭 */
+function show(v){document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  ["ask","list","faq","calc"].forEach(x=>$("#v-"+x).hidden=x!==v);}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* 카드 렌더 */
+function cardHTML(e,open=true){
+  const docs=e.docs?`<div class="docs"><b>증빙서류</b><ul>${e.docs.map(d=>`<li>${d}</li>`).join("")}</ul></div>`:"";
+  const calc=e.calc?`<p><button class="btn ghost" type="button" data-calc="${e.calc}">계산기로 바로 계산</button></p>`:"";
+  const body=e.b.replace(/<table>/g,'<div class="tbl"><table>').replace(/<\/table>/g,"</table></div>");
+  const moe=e.moe?`<div class="moe"><b>교육부 지침과 차이</b>${e.moe}</div>`:"";
+  const cat=e.faq?`<div class="cat faqlbl">교육부 FAQ · ${e.fcat}</div>`:`<div class="cat">${e.cat}</div>`;
+  return `${cat}<h3>${e.faq?"Q. ":""}${e.t}</h3>|||<div class="bd">${body}${moe}${docs}${calc}</div>`;
+}
+function card(e){const [h,b]=cardHTML(e).split("|||");
+  return `<article class="card"><div class="hd"><div>${h}</div><span class="pg">${pg(e)}</span></div>${b}</article>`;}
+function pg(e){return /^[0-9~, ]+$/.test(e.p)?e.p+"쪽":e.p;}
+document.addEventListener("click",ev=>{const c=ev.target.closest("[data-calc]");if(c){show("calc");$("#c-"+c.dataset.calc).scrollIntoView({behavior:"smooth",block:"start"});}
+  const r=ev.target.closest("[data-open]");if(r){const e=KB.find(x=>x.id===r.dataset.open);r.closest(".a").querySelector(".slot").innerHTML=card(e);}
+  const x=ev.target.closest("[data-ex]");if(x){show("ask");$("#q").value=x.dataset.ex;ask(x.dataset.ex);}});
+
+/* 검색 */
+const SYN={"밥":"식비","식사":"식비","점심":"식비","저녁":"식비","회의":"회의비","심사":"심사수당 심사위원","커피":"다과","간식":"다과","교수":"대학교수 강사","특강":"외부강사 강사료","강의":"강사료","강사":"강사료","알바":"학생보조인력","노트북":"장비 기자재","컴퓨터":"장비 기자재","출장":"여비","항공":"여비 항공료","술":"주류 회의비","맥주":"주류","현수막":"홍보비","굿즈":"홍보물품 행사","상품권":"대가성","선물":"선물","대회":"시상금","공모전":"시상금","평가":"심사","통장":"계좌이체","현금":"현금","남으면":"반납 이월","남은":"반납 이월","내년":"이월","쪼개":"분할구매","교재":"교재개발","영상":"동영상","야근":"연장근로","주말":"주말 회의비","공무원":"공직자 청탁금지법","구독":"구독료","노션":"구독료","해외":"국외여비","외국":"국외여비","KTX":"교통비 국내여비","ktx":"교통비 국내여비","자차":"자가차량","내차":"자가차량","횟집":"활어회","고기집":"식육식당","식권":"선결제","미리":"선결제","기숙사":"내부거래","PC":"행정용 기자재","외주":"위탁","대행":"위탁","하룻밤":"숙박비","주차":"주차비 관외","1박":"숙박비 국내여비"};
+function tokens(q){return q.toLowerCase().replace(/[?!.,()~\/]/g," ").split(/\s+/).filter(Boolean)
+  .map(t=>t.replace(/(은|는|이|가|을|를|에|에서|으로|로|도|의|만|랑|하고|하면|인데|이면|면|할때|일때|때)$/,"")).filter(t=>t.length>=1);}
+function search(q){
+  let ex=q;Object.entries(SYN).forEach(([k,v])=>{if(q.includes(k))ex+=" "+v;});
+  const flat=ex.replace(/\s/g,"").toLowerCase(), toks=tokens(ex);
+  return KB.map(e=>{let s=0;const kws=e.kw.map(k=>k.toLowerCase()),body=strip(e.b).toLowerCase(),title=e.t.toLowerCase();
+    kws.forEach(k=>{const kk=k.replace(/\s/g,"");if(kk.length>=2&&flat.includes(kk))s+=2+kk.length*.4;});
+    toks.forEach(t=>{if(t.length<2)return;if(title.includes(t))s+=2.5;if(kws.some(k=>k.includes(t)))s+=1.2;else if(body.includes(t))s+=.5;});
+    return {e,s};}).filter(x=>x.s>=1.5).sort((a,b)=>b.s-a.s).map(x=>x.e);
+}
+
+/* AI */
+const AIMSG={
+ unavailable:"AI 가이드를 쓸 수 없는 화면입니다. AI 답변은 <b>Claude에 로그인한 상태</b>에서 claude.ai 링크로 열었을 때만 동작해요. 로그인 후 다시 열어 주세요. 아래 지침 원문 기준과 계산기는 그대로 쓸 수 있습니다.",
+ not_granted:"AI 사용 허용 창에서 허용하지 않아 답변을 만들지 못했어요. 페이지를 새로고침한 뒤 질문하고, 허용 창에서 <b>허용</b>을 눌러 주세요.",
+ sampling_disabled:"이 계정(또는 소속 조직 설정)에서는 페이지 안 AI 기능이 꺼져 있어요. 아래 지침 원문 기준을 확인해 주세요.",
+ capability_disabled:"이 화면에서는 AI 기능을 쓸 수 없어요. claude.ai에 로그인한 브라우저나 Claude 앱에서 링크를 열어 주세요.",
+ session_expired:"Claude 로그인이 만료됐어요. 다시 로그인한 뒤 질문해 주세요.",
+ rate_limited:"요청이 많거나 Claude 사용 한도에 도달했어요. 잠시 후 다시 질문해 주세요.",
+ other:"AI 답변을 불러오지 못했어요. 잠시 후 다시 시도하고, 그동안 아래 지침 원문 기준을 확인해 주세요."};
+let samplePromise=null;function getSample(){if(!samplePromise)samplePromise=(window.claude&&window.claude.use)?window.claude.use("sample").catch(()=>null):Promise.resolve(null);return samplePromise;}
+const KBTXT=KB.map(e=>`[${e.faq?"교육부 FAQ: ":""}${e.t}] (${pg(e)}, ${e.cat})\n${strip(e.b)}${e.moe?"\n교육부 지침과 차이: "+e.moe:""}${e.docs?"\n증빙: "+e.docs.join(" / "):""}`).join("\n\n");
+function md(t){const lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split("\n");let o="",inL=false;
+  lines.forEach(l=>{if(/^\s*[-•·]\s+/.test(l)){if(!inL){o+="<ul>";inL=true;}o+="<li>"+l.replace(/^\s*[-•·]\s+/,"")+"</li>";}
+    else{if(inL){o+="</ul>";inL=false;}if(l.trim())o+="<p>"+l.replace(/^#+\s*/,"")+"</p>";}});
+  return o+(inL?"</ul>":"");}
+async function aiAnswer(q,box){
+  const sample=await getSample();
+  if(!sample){box.querySelector(".txt").innerHTML=`<p class="err">${AIMSG.unavailable}</p>`;return;}
+  const txt=box.querySelector(".txt"); txt.textContent="지침을 읽고 답을 정리하는 중...";
+  const prompt=`당신은 울산대학교 앵커사업단 직원을 돕는 사업비 집행 가이드입니다. 아래 [지침 요약]만 근거로 질문에 답하세요.
+규칙:
+- 한국어, 짧고 실무적으로. 첫 줄에 결론(가능/불가/조건부, 또는 금액).
+- 금액이 나오면 계산 과정을 한 줄로 보여 주세요 (예: 25만 + 12만×2 = 49만 원).
+- 필요한 절차·증빙서류를 '- ' 목록으로 3~5개 이내.
+- 근거 쪽수를 (p.NN) 형식으로 표시.
+- 근거는 [지침 요약]의 울산대 지침, 교육부 지침과 차이, 교육부 FAQ, 연구과제여비기준지침(2026.4.1) 순으로 확인하고, 교육부 지침과 다른 부분이 있으면 한 줄로 알려 주세요.
+- 여비는 국내(일비 25,000·식비 12,000·숙박 상한 100,000, 제3호 기준) 등 표를 그대로 써서 계산하세요. 학생 여비 상한액은 지침에 없으니 계산하지 마세요.
+- 지침에 없는 내용은 추측하지 말고 "지침에 명시되어 있지 않아 울산앵커센터 또는 사업단 회계 담당과 확인이 필요합니다"라고 답하세요.
+- 마크다운은 **굵게**와 '- ' 목록만 사용.
+
+[지침 요약 · 울산대 2026.10 개정(안) + 교육부 지침·FAQ + 여비지침]
+${KBTXT}
+
+[질문]
+${q}`;
+  try{const r=await sample(prompt,{cache:false,modelTier:"default",onText:({text})=>{txt.innerHTML=md(text);}});
+    txt.innerHTML=md(r.text);}
+  catch(err){const c=err&&err.code;
+    txt.innerHTML=(err&&err.text?md(err.text):"")+`<p class="err">${AIMSG[c]||AIMSG.other}</p>`;}
+}
+
+/* 질문 처리 */
+function ask(q){
+  q=q.trim(); if(!q)return; const th=$("#thread");
+  const hits=search(q);
+  const qd=document.createElement("div");qd.className="q";qd.textContent=q;
+  const a=document.createElement("div");a.className="a";
+  let html=`<div class="ai"><div class="lbl">AI 가이드</div><div class="txt"></div></div>`;
+  if(hits.length){
+    const main=hits.find(e=>!e.faq)||hits[0], fq=hits.find(e=>e.faq&&e!==main);
+    html+=`<div class="lbl">지침 원문 기준</div><div class="slot">${card(main)}</div>`;
+    if(fq)html+=`<div class="slot">${card(fq)}</div>`;
+    const rest=hits.filter(e=>e!==main&&e!==fq).slice(0,4);
+    if(rest.length)html+=`<div class="more"><span>관련 기준:</span>${rest.map(e=>`<button class="chip" type="button" data-open="${e.id}">${e.faq?"FAQ · ":""}${e.t}</button>`).join("")}</div>`;
+  } else html+=`<p class="empty">일치하는 항목을 찾지 못했습니다. '회의비', '강사료', '장비'처럼 비용 이름을 넣어 다시 물어보거나 <b>항목별 보기</b>에서 찾아보세요.</p>`;
+  a.innerHTML=html; th.prepend(a); th.prepend(qd);
+  aiAnswer(q,a.querySelector(".ai"));
+  $("#q").value=""; qd.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("#askForm").onsubmit=ev=>{ev.preventDefault();ask($("#q").value);};
+const EX=["직원이 서울 1박 2일 KTX 출장, 여비는?","베트남 3박 5일 국외출장 일비·숙박비 한도","횟집에서 법인카드로 회의비 결제해도 되나?","회의 식권을 미리 사 둬도 되나요?","외부 교수 특강 2시간 40분, 서울에서 오면 강사료는?","회의 끝나고 저녁 먹을 때 1인당 얼마까지?","노트북 5대 3,500만 원어치 사려면 절차는?","학생 아르바이트 시급이랑 근무시간 제한","휴학생한테 장학금 줄 수 있어?","공모전 참가 60명, 개인 시상금 한도","사업비 남으면 내년으로 이월돼?","성과급 균등 배분해도 되나요?","직원 워크숍 비용 집행 가능?","외부위원 심사 5시간 했을 때 수당"];
+$("#examples").innerHTML=EX.map(e=>`<button class="chip" type="button" data-ex="${esc(e)}">${e}</button>`).join("");
+/* 첫 화면 예시 (AI 호출 없이 원문 기준만) */
+(function(){const th=$("#thread"),q="예시) 회의비 1인당 한도와 필요한 서류",hits=search("회의비 서명부");
+  th.innerHTML=`<div class="q">${q}</div><div class="a"><div class="lbl">지침 원문 기준</div><div class="slot">${card(hits[0])}</div><div class="more"><span>관련 기준:</span>${["meeting2","seafood","faq14"].map(id=>KB.find(e=>e.id===id)).map(e=>`<button class="chip" type="button" data-open="${e.id}">${e.t}</button>`).join("")}</div></div>`;})();
+
+/* 항목별 보기 */
+const BASE=KB.filter(e=>!e.faq);const CATS=["전체",...new Set(BASE.map(e=>e.cat))];let curCat="전체";
+function renderList(){$("#filter").innerHTML=CATS.map(c=>`<button class="chip" type="button" aria-pressed="${c===curCat}" data-cat="${c}">${c}</button>`).join("");
+  $("#list").innerHTML=BASE.filter(e=>curCat==="전체"||e.cat===curCat).map(e=>{const [h,b]=cardHTML(e).split("|||");
+    return `<details class="card"><summary><div>${h}</div><span class="pg">${pg(e)}</span></summary>${b}</details>`;}).join("");}
+$("#filter").onclick=ev=>{const b=ev.target.closest("[data-cat]");if(b){curCat=b.dataset.cat;renderList();}};
+renderList();
+const FQ=KB.filter(e=>e.faq),FCATS=["전체",...new Set(FQ.map(e=>e.fcat))];let curF="전체";
+function renderFaq(){$("#ffilter").innerHTML=FCATS.map(c=>`<button class="chip" type="button" aria-pressed="${c===curF}" data-fc="${c}">${c}</button>`).join("");
+  $("#flist").innerHTML=FQ.filter(e=>curF==="전체"||e.fcat===curF).map(e=>{const [h,b]=cardHTML(e).split("|||");
+    return `<details class="card"><summary><div>${h}</div><span class="pg">${pg(e)}</span></summary>${b}</details>`;}).join("");}
+$("#ffilter").onclick=ev=>{const b=ev.target.closest("[data-fc]");if(b){curF=b.dataset.fc;renderFaq();}};
+renderFaq();
+
+/* 강사료 계산기 */
+const G=[["ext:40:30:30","외부 특1급 (장관급·총장·대기업 회장)"],["ext:30:20:20","외부 특2급 (차관급·공공기관장·언론사 대표)"],["ext:25:12:12","외부 일반1급 (대학교수·기업 임원·4급↑)"],["ext:15:8:8","외부 일반2급 (대학강사·부장급·5급↓)"],["ext:10:5:5","외부 일반3급 (외국어·전산 강사 등)"],["ext:8:4:4","외부 일반4급 (취미소양)"],["ext:6:3:3","외부 일반5급 (실습 보조)"],["in:10","내부 전임교원 (시간당 10만)"],["in:8","내부 직원 (시간당 8만)"]];
+$("#lg").innerHTML=G.map(([v,t],i)=>`<option value="${v}" ${i===2?"selected":""}>${t}</option>`).join("");
+function lectHours(h,m){const t=h*60+m;if(t<60)return 0;return Math.min(4,1+Math.floor((t-60+30)/60));}
+function calcLect(){
+  const g=$("#lg").value.split(":"),h=+$("#lh").value||0,m=+$("#lm").value||0,n=+$("#ln").value||0,reg=$("#lr").value,
+    night=$("#lnight").checked,off=$("#loff").checked,pub=$("#lpub").checked;
+  const raw=h*60+m, H=lectHours(h,m); let rows=[],base=0;
+  if(H===0){$("#lres").innerHTML=`<div class="row"><span>1시간 미만 강의는 강사수당 산정 기준(최초 1시간 도달)에 미달합니다.</span></div>`;return;}
+  if(g[0]==="ext"){const f=+g[1]*1e4,x=+g[2]*1e4;base=f+x*(H-1);rows.push(["기본 수당",`${g[1]}만 + ${g[2]}만 × ${H-1}시간 = ${won(base)}`]);}
+  else{base=+g[1]*1e4*H;rows.push(["기본 수당",`${g[1]}만 × ${H}시간 = ${won(base)}`]);}
+  let add=0;
+  if(g[0]==="ext"){const pct=n>=250?.3:n>=100?.2:0;if(pct){add+=base*pct;rows.push([`수강인원 할증 ${pct*100}% (${n}명)`,won(base*pct)]);}}
+  if(night){add+=base*.2;rows.push(["야간 추가 20% 이내",won(base*.2)]);}
+  if(off&&g[1]==="10"&&g[0]==="in"){add+=base*.2;rows.push(["외부 교육장 추가 20% 이내",won(base*.2)]);}
+  let mv=0;
+  if(g[0]==="ext"&&reg==="2"){if(pub)rows.push(["이동시간수당","공직자 등은 미지급 (학교·언론사 임직원 예외)"]);else{mv=+g[3]*1e4;rows.push(["이동시간수당 (2권역, 1일 1회)",won(mv)]);}}
+  const tot=base+add+mv;
+  const cap=raw>4*60+30?`<div class="row"><span class="flag no">1인 1일 최대 4시간까지만 지급</span></div>`:"";
+  $("#lres").innerHTML=`<div class="row"><span>인정 강의시간</span><b>${H}시간 (실제 ${Math.floor(raw/60)}시간 ${raw%60}분)</b></div>`+
+   rows.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("")+
+   `<div class="big">${won(tot)} 이내</div>`+cap+
+   `<div class="note">${g[0]==="ext"?"교통비·숙박비 실비는 별도. ":""}${pub?"공직자 등은 청탁금지법 사례금 상한을 넘을 수 없습니다. ":""}할증·야간은 '범위 내' 상한입니다.</div>`;
+}
+["#lg","#lh","#lm","#ln","#lr","#lnight","#loff","#lpub"].forEach(s=>$(s).addEventListener("input",calcLect));calcLect();
+
+/* 원고료 */
+function calcMs(){const u=+$("#mt").value,a=+$("#ma").value||0,p=+$("#mp").value||0,w=+$("#mw").value||0,v=+$("#mv").value||0;
+  const eq=a+p/2+w/3.5, amt=eq*u, vid=v*2e5;
+  $("#mres").innerHTML=`<div class="row"><span>A4 환산 매수</span><span>${a} + PPT ${p}÷2 + 원고지 ${w}÷3.5 = ${eq.toFixed(1)}매</span></div>
+  <div class="row"><span>원고료</span><span>${eq.toFixed(1)}매 × ${u.toLocaleString()}원 = ${won(amt)}</span></div>
+  ${v?`<div class="row"><span>동영상 제작료</span><span>${v}차시 × 20만 = ${won(vid)}</span></div>`:""}
+  <div class="big">${won(amt+vid)} 이내</div>
+  <div class="note">표지·목차·참고문헌·부록은 제외, 직접인용 과반 페이지 제외, 이미지 과반 페이지는 반액. 원고료는 ±20% 가감 가능.</div>`;}
+["#mt","#ma","#mp","#mw","#mv"].forEach(s=>$(s).addEventListener("input",calcMs));calcMs();
+
+/* 회의비 */
+function calcMeet(){const n=+$("#en").value||1,a=+$("#ea").value||0,s=+$("#es").value||0,t=$("#et").value,boss=$("#eboss").checked,out=$("#eout").checked,only=$("#eonly").checked;
+  const lim=boss?5e4:3e4,per=a/n,perS=s/n,tot=a+s,f=[];
+  if(only)f.push(["no","참여연구자만의 회의는 식비·다과비 계상 불가 (연구개발과제)"]);
+  f.push(per<=lim?["ok",`식비 1인 ${won(per)} · 한도 ${won(lim)} 이내`]:["no",`식비 1인 ${won(per)} · 한도 ${won(lim)} 초과`]);
+  if(s)f.push(perS<=1e4?["ok",`다과 1인 ${won(perS)} · 1만 원 이내`]:["no",`다과 1인 ${won(perS)} · 1만 원 초과`]);
+  f.push(tot>=5e5?["no","50만 원 이상: 참석자 서명부(서명 날인) 필요"]:["ok","50만 원 미만: 서명부 의무 아님"]);
+  if(t!=="0")f.push(["no","23시 이후·주말·공휴일: 사유서 제출"]);
+  if(out)f.push(["no","관외 지역: 출장신청서 첨부"]);
+  $("#eres").innerHTML=`<div class="row"><span>총 집행액</span><b>${won(tot)}</b></div><div class="row"><span>집행 가능 상한 (식비)</span><span>${n}명 × ${won(lim)} = ${won(n*lim)}</span></div>
+  <div class="flags">${f.map(([c,x])=>`<span class="flag ${c}">${x}</span>`).join("")}</div>
+  <div class="note">필수: 내부품의, 회의록(일시·장소·참석자·내용), 카드영수증. e나라도움카드 사용 원칙, 주류 불가.</div>`;}
+["#en","#ea","#es","#et","#eboss","#eout","#eonly"].forEach(s=>$(s).addEventListener("input",calcMeet));calcMeet();
+/* 여비 계산기 */
+document.getElementById("tripTabs").onclick=ev=>{const b=ev.target.closest("[data-t]");if(!b)return;
+  document.querySelectorAll("#tripTabs [data-t]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  ["dom","loc","intl","stu"].forEach(t=>$("#trip-"+t).hidden=t!==b.dataset.t);};
+const DOM={1:{d:30000,m:20000,l:150000},2:{d:25000,m:12000,l:100000},3:{d:25000,m:12000,l:100000}};
+function countMeals(s,e){let n=0;const W=[[8,9],[12,13],[18,19]];
+  const d0=new Date(s.getFullYear(),s.getMonth(),s.getDate());
+  for(let d=new Date(d0);d<=e;d.setDate(d.getDate()+1)){W.forEach(([a,b])=>{const st=new Date(d);st.setHours(a,0,0,0);const en=new Date(d);en.setHours(b,0,0,0);if(s<=st&&e>=en)n++;});}
+  return n;}
+function calcDom(){
+  const g=DOM[$("#dg").value],s=new Date($("#ds").value),e=new Date($("#de").value),t=$("#dt").value;
+  ["#w-fare"].forEach(x=>$(x).hidden=t!=="pub");["#w-km","#w-oil","#w-toll"].forEach(x=>$(x).hidden=t!=="car");$("#w-park").hidden=t==="metro";
+  if(isNaN(s)||isNaN(e)||e<s){$("#dres").innerHTML=`<div class="row"><span>복귀 일시가 출발 일시보다 뒤여야 합니다.</span></div>`;return;}
+  const days=Math.round((new Date(e.getFullYear(),e.getMonth(),e.getDate())-new Date(s.getFullYear(),s.getMonth(),s.getDate()))/864e5)+1;
+  const meals=Math.max(0,countMeals(s,e)-(+$("#dfree").value||0));
+  const nights=+$("#dn").value||0,lodgeReal=+$("#dl").value||0,cap=$("#dconf").checked?200000:g.l;
+  const lodge=Math.min(lodgeReal,nights*cap);
+  let tr=0,trTxt="";const parkReal=t==="metro"?0:(+$("#dpark").value||0),park=Math.min(parkReal,10000);
+  if(t==="pub"){tr=+$("#dfare").value||0;trTxt=`대중교통 실비 ${won(tr)}`;}
+  else if(t==="car"){const km=+$("#dkm").value||0,oil=+$("#doil").value||0,toll=+$("#dtoll").value||0;
+    const fuel=Math.round(km/10*oil);tr=fuel+toll;trTxt=`유류비 ${km}km÷10×${oil.toLocaleString()} = ${won(fuel)} + 통행료 ${won(toll)}`;}
+  else trTxt="광역시 내 이동은 교통비 미지급";
+  const daily=days*g.d,meal=meals*g.m,tot=daily+meal+lodge+tr+park;
+  const warn=[];
+  if(lodgeReal>nights*cap)warn.push(`숙박 실비 ${won(lodgeReal)}가 상한 ${won(nights*cap)}을 넘어 상한까지만 인정`);
+  if(nights>=days)warn.push("숙박 박수가 출장 일수 이상입니다. 확인하세요");
+  if(t==="car")warn.push("2인 이상 동승 시 교통비·주차비는 1인에게만 지급");
+  if(parkReal>10000)warn.push(`주차비 실비 ${won(parkReal)} 중 1만 원까지만 인정`);
+  $("#dres").innerHTML=`<div class="row"><span>출장 일수 / 인정 식수</span><b>${days}일 / ${meals}식</b></div>
+  <div class="row"><span>일비 (정액)</span><span>${days}일 × ${won(g.d)} = ${won(daily)}</span></div>
+  <div class="row"><span>식비 (정액, 기준시간 자동 산정)</span><span>${meals}식 × ${won(g.m)} = ${won(meal)}</span></div>
+  <div class="row"><span>숙박비 (실비, 1박 ${won(cap)} 한도)</span><span>${won(lodge)}</span></div>
+  <div class="row"><span>교통비</span><span>${trTxt}</span></div>
+  ${t==="metro"?"":`<div class="row"><span>주차비 (실비, 1만 원 이내)</span><span>${won(park)}</span></div>`}
+  <div class="big">${won(tot)}</div>
+  ${warn.length?`<div class="flags">${warn.map(w=>`<span class="flag no">${w}</span>`).join("")}</div>`:""}
+  <div class="note">식수 기준시간: 조식 08~09시, 중식 12~13시, 석식 18~19시 (출발이 시작 전, 도착이 종료 후일 때 1식). 출장신청서 시각 기준이며 최종 판단은 회계 담당 검토. 청구는 출장 종료 후 15일 이내.</div>`;}
+["#dg","#ds","#de","#dn","#dl","#dfree","#dt","#dfare","#dkm","#doil","#dtoll","#dpark","#dconf"].forEach(x=>$(x).addEventListener("input",calcDom));calcDom();
+
+function calcLoc(){const h=+$("#lh2").value||0,d=+$("#ld2").value||1,c=+$("#lcar").value||0;
+  const per=h>=4?20000:10000,a=per*d,b=c*5000;
+  $("#locres").innerHTML=`<div class="row"><span>현지교통비(일비)</span><span>${h>=4?"4시간 이상":"4시간 미만"} ${won(per)} × ${d}일 = ${won(a)}</span></div>
+  ${c?`<div class="row"><span>산업단지캠퍼스 개인차량</span><span>${c}회 × 5,000원 = ${won(b)}</span></div>`:""}
+  <div class="big">${won(a+b)}</div><div class="note">관내 출장은 교통비·숙박비를 따로 산정하지 않습니다.</div>`;}
+["#lh2","#ld2","#lcar"].forEach(x=>$(x).addEventListener("input",calcLoc));calcLoc();
+
+const INTL=[[[40,282,133],[40,207,99],[40,162,72],[40,108,61]],[[35,223,107],[35,160,78],[35,130,58],[35,85,49]],[[30,176,81],[30,137,59],[30,106,44],[30,81,37]]];
+const CTRY={0:"도쿄,뉴욕,런던,로스엔젤레스,LA,모스크바,샌프란시스코,워싱턴,파리,홍콩,제네바,싱가포르",
+1:"타이완,대만,베이징,인도,일본,카자흐스탄,파푸아뉴기니,멕시코,미국,브라질,아르헨티나,캐나다,자메이카,그리스,네덜란드,노르웨이,덴마크,독일,러시아,룩셈부르크,벨기에,스웨덴,스위스,스페인,아이슬란드,영국,오스트리아,우크라이나,이탈리아,포르투갈,프랑스,핀란드,헝가리,남아프리카공화국,바레인,사우디아라비아,아랍에미리트,UAE,두바이,오만,이스라엘,이집트,카타르,쿠웨이트",
+2:"뉴질랜드,말레이시아,방글라데시,브루나이,아제르바이잔,오스트레일리아,호주,인도네시아,우즈베키스탄,중국,상하이,키르기즈공화국,태국,타이,터키,튀르키예,타지키스탄,투르크메니스탄,파키스탄,도미니카공화국,베네수엘라,우루과이,칠레,코스타리카,파나마,라트비아,루마니아,리투아니아,불가리아,아일랜드,세르비아,몬테네그로,슬로베니아,슬로바키아,체코,폴란드,가나,나이지리아,모로코,요르단,이라크,케냐,탄자니아,알제리",
+3:"네팔,동티모르,라오스,미크로네시아,몽골,미얀마,베트남,하노이,호치민,스리랑카,캄보디아,피지,필리핀,과테말라,니카라과,볼리비아,에콰도르,엘살바도르,온두라스,콜롬비아,파라과이,페루,마케도니아,몰도바,보스니아헤르체고비나,벨라루스,알바니아,에스토니아,크로아티아,레바논,르완다,마다가스카르,이란,튀니지,짐바브웨"};
+$("#countries").innerHTML=Object.values(CTRY).join(",").split(",").map(c=>`<option value="${c}">`).join("");
+$("#ic").addEventListener("input",()=>{const v=$("#ic").value.trim();if(!v)return;
+  for(const k of [0,1,2,3]){if(CTRY[k].split(",").some(c=>c===v||(v.length>=2&&c.startsWith(v)))){$("#igr").value=k;break;}}calcIntl();});
+function calcIntl(){const r=INTL[+$("#ig").value][+$("#igr").value],[da,lc,me]=r;
+  const days=+$("#idays").value||0,n=+$("#inight").value||0,real=+$("#ilodge").value||0,free=+$("#ifree").value||0,fx=+$("#ifx").value||0,air=+$("#iair").value||0,disc=$("#idisc").checked;
+  const daily=da*days,lodge=disc?Math.floor(lc*0.8)*n:Math.min(real,lc*n),perMeal=Math.floor(me/3),meal=Math.max(0,me*days-perMeal*free);
+  const usd=daily+lodge+meal,krw=Math.round(usd*fx)+air;const G=["가","나","다","라"][+$("#igr").value];
+  $("#ires").innerHTML=`<div class="row"><span>적용 기준</span><b>${G} 등급 · 일비 $${da} · 숙박 상한 $${lc} · 식비 $${me}/일</b></div>
+  <div class="row"><span>일비</span><span>$${da} × ${days}일 = $${daily}</span></div>
+  <div class="row"><span>숙박비</span><span>${disc?`할인정액 $${Math.floor(lc*0.8)} × ${n}박 = $${lodge}`:`실비 $${real} (한도 $${lc*n}) → $${lodge}`}</span></div>
+  <div class="row"><span>식비</span><span>$${me} × ${days}일${free?` − ${free}식 × $${perMeal}`:""} = $${meal}</span></div>
+  <div class="row"><span>체재비 소계</span><span>$${usd.toLocaleString()} × ${fx.toLocaleString()}원 = ${won(usd*fx)}</span></div>
+  <div class="row"><span>항공료 (실비)</span><span>${won(air)}</span></div>
+  <div class="big">${won(krw)}</div>
+  ${!disc&&real>lc*n?`<div class="flags"><span class="flag no">숙박 실비가 상한을 넘어 상한까지만 인정</span></div>`:""}
+  <div class="note">항공은 일반석, e나라도움카드 결제 필수. 숙박·식비는 현지 실 체재기간만, 기내식·주최측 제공 식사 제외. 1식 = 1일 식비의 1/3(절사). 등급은 공무원 국외여비 기준이니 출장지 등급을 꼭 확인하세요.</div>`;}
+["#ig","#igr","#idays","#inight","#ilodge","#ifree","#ifx","#iair","#idisc"].forEach(x=>$(x).addEventListener("input",calcIntl));calcIntl();
+
+</script>
+</body>
+</html>
